@@ -18,11 +18,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.dessalines.thumbkey"
+        applicationId = "com.birdmachine.keywi"
         minSdk = 24
         targetSdk = 36
         versionCode = 186
-        versionName = "5.1.16"
+        versionName = "5.1.16-keywi.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
