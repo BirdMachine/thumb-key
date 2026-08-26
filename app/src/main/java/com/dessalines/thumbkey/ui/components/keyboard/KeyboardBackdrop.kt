@@ -2,10 +2,12 @@ package com.dessalines.thumbkey.ui.components.keyboard
 
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -35,23 +37,31 @@ val VIOLENTLY_GARISH_BACKDROP =
 /**
  * Paint a linear gradient that can contain any number of color stops.
  *
- * The brush uses an effectively infinite line centred on the composable. Compose clips
- * the result to the element bounds, so this works without needing to know keyboard size.
+ * The gradient is calculated from the composable's actual bounds, so every requested
+ * angle spans the full keyboard instead of sampling only a small section of a huge brush.
  */
 fun Modifier.keyboardGradientBackground(backdrop: KeyboardBackdrop): Modifier {
     if (backdrop.colors.isEmpty()) return this
     if (backdrop.colors.size == 1) return background(backdrop.colors.first())
 
-    val radians = backdrop.angleDegrees * (PI / 180.0)
-    val direction = Offset(cos(radians).toFloat(), sin(radians).toFloat())
-    val extent = 10_000f
-
-    return background(
-        brush =
+    return drawWithCache {
+        val radians = backdrop.angleDegrees * (PI / 180.0)
+        val direction = Offset(cos(radians).toFloat(), sin(radians).toFloat())
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val halfSpan =
+            (abs(direction.x) * size.width / 2f) +
+                (abs(direction.y) * size.height / 2f)
+        val start = center - (direction * halfSpan)
+        val end = center + (direction * halfSpan)
+        val brush =
             Brush.linearGradient(
                 colors = backdrop.colors,
-                start = Offset(-direction.x * extent, -direction.y * extent),
-                end = Offset(direction.x * extent, direction.y * extent),
-            ),
-    )
+                start = start,
+                end = end,
+            )
+
+        onDrawBehind {
+            drawRect(brush = brush)
+        }
+    }
 }
