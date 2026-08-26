@@ -27,23 +27,24 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
-const val DEFAULT_AUTO_SIZE_KEYS = 1
+const val DEFAULT_AUTO_SIZE_KEYS = 0
 const val DEFAULT_NON_SQUARE_KEYS = 0
 const val DEFAULT_KEY_WIDTH = 64
 const val DEFAULT_KEY_HEIGHT = DEFAULT_KEY_WIDTH
 const val DEFAULT_ANIMATION_SPEED = 250
 const val DEFAULT_ANIMATION_HELPER_SPEED = 250
-const val DEFAULT_POSITION = 0
+const val DEFAULT_POSITION = 1
 const val DEFAULT_POSITION_PADDING = 0
 const val DEFAULT_AUTO_CAPITALIZE = 1
-const val DEFAULT_KEYBOARD_LAYOUT = 0
-const val DEFAULT_THEME = 0
+const val DEFAULT_KEYBOARD_LAYOUT = 108
+const val DEFAULT_KEYBOARD_LAYOUTS = "0, 15, 168, 108, 16, 162, 136, 110, 138"
+const val DEFAULT_THEME = 2
 const val DEFAULT_THEME_COLOR = 0
 const val DEFAULT_VIBRATE_ON_TAP = 1
 const val DEFAULT_VIBRATE_ON_SLIDE = 1
 const val DEFAULT_SOUND_ON_TAP = 0
 const val DEFAULT_MIN_SWIPE_LENGTH = 40
-const val DEFAULT_PUSHUP_SIZE = 0
+const val DEFAULT_PUSHUP_SIZE = 14
 const val DEFAULT_HIDE_LETTERS = 0
 const val DEFAULT_HIDE_SYMBOLS = 0
 const val DEFAULT_KEY_BORDERS = 1
@@ -55,8 +56,8 @@ const val DEFAULT_SLIDE_CURSOR_MOVEMENT_MODE = 0
 const val DEFAULT_SLIDE_SPACEBAR_DEADZONE_ENABLED = 1
 const val DEFAULT_SLIDE_BACKSPACE_DEADZONE_ENABLED = 1
 const val DEFAULT_BACKDROP_ENABLED = 0
-const val DEFAULT_KEY_PADDING = 0
-const val DEFAULT_KEY_BORDER_WIDTH = 1
+const val DEFAULT_KEY_PADDING = 1
+const val DEFAULT_KEY_BORDER_WIDTH = 5
 const val DEFAULT_KEY_RADIUS = 0
 const val DEFAULT_DRAG_RETURN_ENABLED = 1
 const val DEFAULT_CIRCULAR_DRAG_ENABLED = 1
@@ -67,7 +68,7 @@ const val DEFAULT_SLIDE_HOLD_ENABLED = 0
 const val DEFAULT_KEY_MODIFICATIONS = ""
 const val DEFAULT_IGNORE_BOTTOM_PADDING = 0
 const val DEFAULT_SHOW_TOAST_ON_LAYOUT_SWITCH = 1
-const val DEFAULT_DISABLE_FULLSCREEN_EDITOR = 0
+const val DEFAULT_DISABLE_FULLSCREEN_EDITOR = 1
 const val DEFAULT_CLIPBOARD_HISTORY_ENABLED = 0
 const val DEFAULT_CLIPBOARD_AUTO_CLEANUP_ENABLED = 1
 const val DEFAULT_CLIPBOARD_CLEANUP_AFTER_MINUTES = 120
@@ -185,7 +186,7 @@ data class AppSettings(
     val hideLetters: Int,
     @ColumnInfo(
         name = "keyboard_layouts",
-        defaultValue = "$DEFAULT_KEYBOARD_LAYOUT",
+        defaultValue = DEFAULT_KEYBOARD_LAYOUTS,
     )
     val keyboardLayouts: String,
     // TODO this needs to be gotten rid of in the next DB update
@@ -648,7 +649,7 @@ abstract class AppDB : RoomDatabase() {
                         .databaseBuilder(
                             context.applicationContext,
                             AppDB::class.java,
-                            "thumbkey",
+                            "keywi",
                         ).allowMainThreadQueries()
                         .addMigrations(
                             MIGRATION_1_2,
