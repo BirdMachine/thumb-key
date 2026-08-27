@@ -31,10 +31,18 @@ data class KeyboardBackdrop(
     ) : this(
         stops =
             when (colors.size) {
-                0 -> emptyList()
-                1 -> listOf(KeyboardGradientStop(0f, colors.first()))
-                else -> colors.mapIndexed { index, color ->
-                    KeyboardGradientStop(index.toFloat() / (colors.size - 1).toFloat(), color)
+                0 -> {
+                    emptyList()
+                }
+
+                1 -> {
+                    listOf(KeyboardGradientStop(0f, colors.first()))
+                }
+
+                else -> {
+                    colors.mapIndexed { index, color ->
+                        KeyboardGradientStop(index.toFloat() / (colors.size - 1).toFloat(), color)
+                    }
                 }
             },
         angleDegrees = angleDegrees,

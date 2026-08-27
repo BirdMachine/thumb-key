@@ -819,9 +819,11 @@ fun KeyboardScreen(
                         Row {
                             row.forEachIndexed { j, key ->
                                 val gradientOffsetX =
-                                    row.take(j).sumOf { previousKey ->
-                                        (previousKey.widthMultiplier * keyWidth).toDouble()
-                                    }.toFloat()
+                                    row
+                                        .take(j)
+                                        .sumOf { previousKey ->
+                                            (previousKey.widthMultiplier * keyWidth).toDouble()
+                                        }.toFloat()
                                 val gradientOffsetY = i * keyHeight
                                 Column {
                                     val ghostKey =
