@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,8 @@ import kotlin.math.roundToInt
 fun BackdropSettingsSection(onChanged: () -> Unit) {
     val context = LocalContext.current
     var state by remember { mutableStateOf(BackdropThemePreferences.load(context)) }
+    var stopsExpanded by remember { mutableStateOf(false) }
+    var expandedStopIndex by remember { mutableStateOf<Int?>(null) }
 
     fun persist(next: BackdropThemeState) {
         state = next
@@ -45,8 +48,8 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Text("Backdrop gradient", style = MaterialTheme.typography.titleMedium)
 
@@ -76,7 +79,7 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
+                    .height(36.dp)
                     .keyboardGradientBackground(state.toBackdrop()),
         )
 
@@ -87,51 +90,66 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
             valueRange = 0f..360f,
         )
 
-        state.stops.forEachIndexed { index, stop ->
-            GradientStopEditor(
-                index = index,
-                stop = stop,
-                canRemove = state.stops.size > 1,
-                onChange = { updated ->
-                    val stops =
-                        state.stops
-                            .toMutableList()
-                            .also { it[index] = updated }
-                            .sortedBy { it.position }
-                    customize(state.copy(stops = stops))
-                },
-                onRemove = {
-                    customize(state.copy(stops = state.stops.toMutableList().also { it.removeAt(index) }))
-                },
-            )
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { stopsExpanded = !stopsExpanded },
+        ) {
+            Text("Color stops (${state.stops.size}) ${if (stopsExpanded) "▲" else "▼"}")
         }
 
-        Button(
-            onClick = {
-                val position =
-                    if (state.stops.isEmpty()) {
-                        0.5f
-                    } else {
-                        val largestGap =
+        if (stopsExpanded) {
+            state.stops.forEachIndexed { index, stop ->
+                CompactGradientStopEditor(
+                    index = index,
+                    stop = stop,
+                    expanded = expandedStopIndex == index,
+                    canRemove = state.stops.size > 1,
+                    onToggleExpanded = {
+                        expandedStopIndex = if (expandedStopIndex == index) null else index
+                    },
+                    onChange = { updated ->
+                        val stops =
                             state.stops
+                                .toMutableList()
+                                .also { it[index] = updated }
                                 .sortedBy { it.position }
-                                .zipWithNext()
-                                .maxByOrNull { (a, b) -> b.position - a.position }
-                        if (largestGap != null) {
-                            (largestGap.first.position + largestGap.second.position) / 2f
-                        } else {
-                            0.5f
-                        }
-                    }
-                val color = state.stops.firstOrNull()?.color ?: Color.White
-                customize(
-                    state.copy(
-                        stops = (state.stops + KeyboardGradientStop(position, color)).sortedBy { it.position },
-                    ),
+                        customize(state.copy(stops = stops))
+                    },
+                    onRemove = {
+                        expandedStopIndex = null
+                        customize(state.copy(stops = state.stops.toMutableList().also { it.removeAt(index) }))
+                    },
                 )
-            },
-        ) {
-            Text("Add color stop")
+            }
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    val position =
+                        if (state.stops.isEmpty()) {
+                            0.5f
+                        } else {
+                            val largestGap =
+                                state.stops
+                                    .sortedBy { it.position }
+                                    .zipWithNext()
+                                    .maxByOrNull { (a, b) -> b.position - a.position }
+                            if (largestGap != null) {
+                                (largestGap.first.position + largestGap.second.position) / 2f
+                            } else {
+                                0.5f
+                            }
+                        }
+                    val color = state.stops.firstOrNull()?.color ?: Color.White
+                    customize(
+                        state.copy(
+                            stops = (state.stops + KeyboardGradientStop(position, color)).sortedBy { it.position },
+                        ),
+                    )
+                },
+            ) {
+                Text("Add color stop")
+            }
         }
     }
 }
@@ -150,50 +168,68 @@ private fun PresetChip(
 }
 
 @Composable
-private fun GradientStopEditor(
+private fun CompactGradientStopEditor(
     index: Int,
     stop: KeyboardGradientStop,
+    expanded: Boolean,
     canRemove: Boolean,
+    onToggleExpanded: () -> Unit,
     onChange: (KeyboardGradientStop) -> Unit,
     onRemove: () -> Unit,
 ) {
     val red = stop.color.red
     val green = stop.color.green
     val blue = stop.color.blue
+    val alpha = stop.color.alpha
 
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(10.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text("Stop ${index + 1} • ${(stop.position * 100).roundToInt()}%")
+            Box(
+                modifier =
+                    Modifier
+                        .size(28.dp)
+                        .background(stop.color),
+            )
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = onToggleExpanded,
+            ) {
+                Text(
+                    "Stop ${index + 1} • ${(stop.position * 100).roundToInt()}% • A ${(alpha * 100).roundToInt()}% " +
+                        if (expanded) "▲" else "▼",
+                )
+            }
             if (canRemove) {
-                Button(onClick = onRemove) { Text("Remove") }
+                Button(onClick = onRemove) { Text("×") }
             }
         }
 
-        Text("Position")
-        Slider(
-            value = stop.position,
-            onValueChange = { onChange(stop.copy(position = it)) },
-            valueRange = 0f..1f,
-        )
-
-        ChannelSlider("R", red) { value ->
-            onChange(stop.copy(color = Color(value, green, blue, stop.color.alpha)))
-        }
-        ChannelSlider("G", green) { value ->
-            onChange(stop.copy(color = Color(red, value, blue, stop.color.alpha)))
-        }
-        ChannelSlider("B", blue) { value ->
-            onChange(stop.copy(color = Color(red, green, value, stop.color.alpha)))
+        if (expanded) {
+            ChannelSlider("Position", stop.position, percent = true) { value ->
+                onChange(stop.copy(position = value))
+            }
+            ChannelSlider("R", red) { value ->
+                onChange(stop.copy(color = Color(value, green, blue, alpha)))
+            }
+            ChannelSlider("G", green) { value ->
+                onChange(stop.copy(color = Color(red, value, blue, alpha)))
+            }
+            ChannelSlider("B", blue) { value ->
+                onChange(stop.copy(color = Color(red, green, value, alpha)))
+            }
+            ChannelSlider("A", alpha, percent = true) { value ->
+                onChange(stop.copy(color = Color(red, green, blue, value)))
+            }
         }
     }
 }
@@ -202,9 +238,11 @@ private fun GradientStopEditor(
 private fun ChannelSlider(
     label: String,
     value: Float,
+    percent: Boolean = false,
     onValueChange: (Float) -> Unit,
 ) {
-    Text("$label ${(value * 255).roundToInt()}")
+    val displayValue = if (percent) (value * 100).roundToInt() else (value * 255).roundToInt()
+    Text("$label $displayValue${if (percent) "%" else ""}")
     Slider(
         value = value,
         onValueChange = onValueChange,
