@@ -9,6 +9,37 @@ on:
       - "birdie/**"
 
 jobs:
+  format-gradient:
+    if: github.event_name == 'push' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: Format Kotlin
+        run: ./gradlew formatKotlin
+      - name: Commit formatted Kotlin
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/KeyboardBackdrop.kt
+          git add app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/KeyboardKey.kt
+          git add app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/KeyboardScreen.kt
+          git diff --cached --quiet && exit 0
+          git commit -m 'Format gradient renderer'
+          git push origin HEAD:birdie/gradient-backgrounds
+
   build:
     runs-on: ubuntu-latest
     permissions:
