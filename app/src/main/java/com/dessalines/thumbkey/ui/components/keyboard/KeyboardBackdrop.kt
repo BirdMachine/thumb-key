@@ -3,9 +3,13 @@ package com.dessalines.thumbkey.ui.components.keyboard
 import androidx.compose.foundation.background
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -103,6 +107,22 @@ val BIRDIE_KEY_GRADIENT =
         angleDegrees = 22f,
     )
 
+/** Polished-gold border preset with narrow bright stops to create a metallic glint. */
+val BIRDIE_GOLD_BORDER =
+    KeyboardBackdrop(
+        stops =
+            listOf(
+                KeyboardGradientStop(0f, Color(0xFF6B3F00)),
+                KeyboardGradientStop(0.18f, Color(0xFFB97700)),
+                KeyboardGradientStop(0.42f, Color(0xFFFFD86B)),
+                KeyboardGradientStop(0.50f, Color(0xFFFFF4C2)),
+                KeyboardGradientStop(0.58f, Color(0xFFFFC94A)),
+                KeyboardGradientStop(0.78f, Color(0xFFD99816)),
+                KeyboardGradientStop(1f, Color(0xFF704100)),
+            ),
+        angleDegrees = 135f,
+    )
+
 private fun KeyboardBackdrop.sortedStops(): List<KeyboardGradientStop> =
     stops
         .map { it.copy(position = it.position.coerceIn(0f, 1f)) }
@@ -154,6 +174,44 @@ fun Modifier.keyboardGradientBackground(backdrop: KeyboardBackdrop): Modifier {
         val brush = backdrop.brush(size.width, size.height)
         onDrawBehind {
             brush?.let { drawRect(brush = it) }
+        }
+    }
+}
+
+/**
+ * Paint a gradient stroke above this composable's content.
+ * Width zero naturally disables the layer, so the existing key-border width setting remains the
+ * single source of truth for both visibility and thickness.
+ */
+fun Modifier.keyboardGradientBorder(
+    backdrop: KeyboardBackdrop,
+    width: Dp,
+    radius: Dp,
+): Modifier {
+    if (width.value <= 0f) return this
+
+    return drawWithCache {
+        val brush = backdrop.brush(size.width, size.height)
+        val strokeWidth = width.toPx().coerceAtMost(minOf(size.width, size.height))
+        val inset = strokeWidth / 2f
+        val strokeSize =
+            Size(
+                width = (size.width - strokeWidth).coerceAtLeast(0f),
+                height = (size.height - strokeWidth).coerceAtLeast(0f),
+            )
+        val cornerRadius = CornerRadius((radius.toPx() - inset).coerceAtLeast(0f))
+
+        onDrawWithContent {
+            drawContent()
+            brush?.let {
+                drawRoundRect(
+                    brush = it,
+                    topLeft = Offset(inset, inset),
+                    size = strokeSize,
+                    cornerRadius = cornerRadius,
+                    style = Stroke(width = strokeWidth),
+                )
+            }
         }
     }
 }
