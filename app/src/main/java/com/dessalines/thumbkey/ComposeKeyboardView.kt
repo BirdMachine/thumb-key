@@ -46,7 +46,7 @@ class ComposeKeyboardView(
             settings = settings,
         ) {
             val backdropEnabled =
-                (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
+                BuildConfig.DEBUG || (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
             val keyboardColorScheme =
                 if (backdropEnabled) {
                     MaterialTheme.colorScheme.copy(background = Color.Transparent)
