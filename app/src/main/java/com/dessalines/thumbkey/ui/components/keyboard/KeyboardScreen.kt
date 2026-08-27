@@ -218,7 +218,10 @@ fun KeyboardScreen(
     val dragReturnEnabled = (settings?.dragReturnEnabled ?: DEFAULT_DRAG_RETURN_ENABLED).toBool()
     val circularDragEnabled = (settings?.circularDragEnabled ?: DEFAULT_CIRCULAR_DRAG_ENABLED).toBool()
     val clockwiseDragAction = CircularDragAction.entries[settings?.clockwiseDragAction ?: DEFAULT_CLOCKWISE_DRAG_ACTION]
-    val counterclockwiseDragAction = CircularDragAction.entries[settings?.counterclockwiseDragAction ?: DEFAULT_COUNTERCLOCKWISE_DRAG_ACTION]
+    val counterclockwiseDragAction =
+        CircularDragAction.entries[
+            settings?.counterclockwiseDragAction ?: DEFAULT_COUNTERCLOCKWISE_DRAG_ACTION,
+        ]
     val ghostKeysEnabled = (settings?.ghostKeysEnabled ?: DEFAULT_GHOST_KEYS_ENABLED).toBool()
     val slideHoldEnabled = (settings?.slideHoldEnabled ?: DEFAULT_SLIDE_HOLD_ENABLED).toBool()
 
@@ -674,8 +677,13 @@ fun KeyboardScreen(
                                     val ghostKey =
                                         if (ghostKeysEnabled) {
                                             when (mode) {
-                                                KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> keyboardDefinition.modes.numeric
-                                                else -> null
+                                                KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> {
+                                                    keyboardDefinition.modes.numeric
+                                                }
+
+                                                else -> {
+                                                    null
+                                                }
                                             }?.arr?.getOrNull(i)?.getOrNull(j)
                                         } else {
                                             null
