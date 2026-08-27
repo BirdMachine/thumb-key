@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -56,11 +57,15 @@ class ComposeKeyboardView(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Box(
                     modifier =
-                        if (backdropEnabled) {
-                            Modifier.keyboardGradientBackground(VIOLENTLY_GARISH_BACKDROP)
-                        } else {
-                            Modifier
-                        },
+                        Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (backdropEnabled) {
+                                    Modifier.keyboardGradientBackground(VIOLENTLY_GARISH_BACKDROP)
+                                } else {
+                                    Modifier
+                                },
+                            ),
                 ) {
                     MaterialTheme(colorScheme = keyboardColorScheme) {
                         KeyboardScreen(
