@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
 
     steps:
       - name: Check out repository
@@ -27,26 +27,6 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
-
-      - name: Expose backdrop editor and push source-only change
-        if: github.event_name == 'push'
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/LookAndFeelScreen.kt')
-          text = path.read_text()
-          old = '''                    if (backdropEnabledState) {\n                        BackdropSettingsSection(onChanged = { updateLookAndFeel() })\n                    }\n'''
-          new = '''                    BackdropSettingsSection(onChanged = { updateLookAndFeel() })\n'''
-          if old not in text:
-              raise SystemExit('Backdrop visibility guard not found')
-          path.write_text(text.replace(old, new, 1))
-          PY
-          ./gradlew formatKotlin
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/LookAndFeelScreen.kt
-          git commit -m "Always expose backdrop appearance editor"
-          git push origin HEAD:${GITHUB_REF_NAME}
 
       - name: Check Kotlin formatting
         run: ./gradlew lintKotlin
