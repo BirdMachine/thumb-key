@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -35,14 +36,16 @@ private val WORD_PATTERN = Regex("[A-Za-z']+$")
 
 object SuggestionPreferences {
     fun enabled(context: Context): Boolean =
-        context.getSharedPreferences(SUGGESTION_PREFS, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(SUGGESTION_PREFS, Context.MODE_PRIVATE)
             .getBoolean(SUGGESTIONS_ENABLED, true)
 
     fun setEnabled(
         context: Context,
         enabled: Boolean,
     ) {
-        context.getSharedPreferences(SUGGESTION_PREFS, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(SUGGESTION_PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(SUGGESTIONS_ENABLED, enabled)
             .apply()
@@ -593,7 +596,8 @@ private object LocalSuggestionEngine {
         messagease
         thumbkey
         keywi
-        """.trimIndent()
+        """
+            .trimIndent()
             .lineSequence()
             .map { it.trim().lowercase(Locale.US) }
             .filter { it.length > 1 }
@@ -607,7 +611,8 @@ private object LocalSuggestionEngine {
         if (prefix.length < 2) return emptyList()
         val normalized = prefix.lowercase(Locale.US)
         val matches =
-            commonWords.asSequence()
+            commonWords
+                .asSequence()
                 .filter { it.startsWith(normalized) && it != normalized }
                 .take(limit)
                 .toList()
@@ -634,7 +639,11 @@ fun SuggestionBar(ime: IMEService) {
 
     LaunchedEffect(enabled, privateField) {
         while (enabled && !privateField) {
-            val beforeCursor = ime.currentInputConnection?.getTextBeforeCursor(64, 0)?.toString().orEmpty()
+            val beforeCursor =
+                ime.currentInputConnection
+                    ?.getTextBeforeCursor(64, 0)
+                    ?.toString()
+                    .orEmpty()
             val nextPrefix = WORD_PATTERN.find(beforeCursor)?.value.orEmpty()
             if (nextPrefix != prefix) {
                 prefix = nextPrefix
@@ -665,7 +674,7 @@ fun SuggestionBar(ime: IMEService) {
             horizontalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             displayed.forEachIndexed { index, suggestion ->
-                val isBest = displayed.size > 1 && index == 1 || displayed.size == 1
+                val isBest = (displayed.size > 1 && index == 1) || displayed.size == 1
                 Surface(
                     shape = RoundedCornerShape(15.dp),
                     color =
