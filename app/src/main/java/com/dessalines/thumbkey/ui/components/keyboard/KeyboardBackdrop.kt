@@ -25,33 +25,36 @@ data class KeyboardBackdrop(
     val stops: List<KeyboardGradientStop>,
     val angleDegrees: Float = 135f,
 ) {
-    constructor(
-        colors: List<Color>,
-        angleDegrees: Float = 135f,
-    ) : this(
-        stops =
-            when (colors.size) {
-                0 -> {
-                    emptyList()
-                }
+    companion object {
+        fun fromColors(
+            colors: List<Color>,
+            angleDegrees: Float = 135f,
+        ): KeyboardBackdrop =
+            KeyboardBackdrop(
+                stops =
+                    when (colors.size) {
+                        0 -> {
+                            emptyList()
+                        }
 
-                1 -> {
-                    listOf(KeyboardGradientStop(0f, colors.first()))
-                }
+                        1 -> {
+                            listOf(KeyboardGradientStop(0f, colors.first()))
+                        }
 
-                else -> {
-                    colors.mapIndexed { index, color ->
-                        KeyboardGradientStop(index.toFloat() / (colors.size - 1).toFloat(), color)
-                    }
-                }
-            },
-        angleDegrees = angleDegrees,
-    )
+                        else -> {
+                            colors.mapIndexed { index, color ->
+                                KeyboardGradientStop(index.toFloat() / (colors.size - 1).toFloat(), color)
+                            }
+                        }
+                    },
+                angleDegrees = angleDegrees,
+            )
+    }
 }
 
 /** Birdie's original four-stop rainbow. Keep this preset exactly as-is. */
 val BIRDIE_RAINBOW_BACKDROP =
-    KeyboardBackdrop(
+    KeyboardBackdrop.fromColors(
         colors =
             listOf(
                 Color(0xFFFF4FA3),
@@ -67,7 +70,7 @@ val VIOLENTLY_GARISH_BACKDROP = BIRDIE_RAINBOW_BACKDROP
 
 /** A cyclic sinebow sampled densely enough to stay silky across a keyboard. */
 val SINEBOW_BACKDROP =
-    KeyboardBackdrop(
+    KeyboardBackdrop.fromColors(
         colors =
             listOf(
                 Color(0xFF00BFBF),
