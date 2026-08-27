@@ -55,21 +55,25 @@ object BackdropThemePreferences {
 
     fun stateForPreset(preset: BackdropPreset): BackdropThemeState =
         when (preset) {
-            BackdropPreset.BIRDIE_RAINBOW ->
+            BackdropPreset.BIRDIE_RAINBOW -> {
                 BackdropThemeState(
                     preset = preset,
                     angleDegrees = BIRDIE_RAINBOW_BACKDROP.angleDegrees,
                     stops = BIRDIE_RAINBOW_BACKDROP.stops,
                 )
+            }
 
-            BackdropPreset.SINEBOW ->
+            BackdropPreset.SINEBOW -> {
                 BackdropThemeState(
                     preset = preset,
                     angleDegrees = SINEBOW_BACKDROP.angleDegrees,
                     stops = SINEBOW_BACKDROP.stops,
                 )
+            }
 
-            BackdropPreset.CUSTOM -> stateForPreset(BackdropPreset.BIRDIE_RAINBOW).copy(preset = preset)
+            BackdropPreset.CUSTOM -> {
+                stateForPreset(BackdropPreset.BIRDIE_RAINBOW).copy(preset = preset)
+            }
         }
 
     private fun encodeStops(stops: List<KeyboardGradientStop>): String =
@@ -80,13 +84,15 @@ object BackdropThemePreferences {
     private fun decodeStops(encoded: String?): List<KeyboardGradientStop>? {
         if (encoded.isNullOrBlank()) return null
         return runCatching {
-            encoded.split(';').map { encodedStop ->
-                val parts = encodedStop.split(',')
-                KeyboardGradientStop(
-                    position = parts[0].toFloat().coerceIn(0f, 1f),
-                    color = Color(parts[1].toInt()),
-                )
-            }.sortedBy { it.position }
+            encoded
+                .split(';')
+                .map { encodedStop ->
+                    val parts = encodedStop.split(',')
+                    KeyboardGradientStop(
+                        position = parts[0].toFloat().coerceIn(0f, 1f),
+                        color = Color(parts[1].toInt()),
+                    )
+                }.sortedBy { it.position }
         }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
 }

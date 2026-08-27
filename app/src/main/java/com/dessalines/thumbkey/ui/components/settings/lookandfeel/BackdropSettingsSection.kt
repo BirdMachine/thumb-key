@@ -93,7 +93,11 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
                 stop = stop,
                 canRemove = state.stops.size > 1,
                 onChange = { updated ->
-                    val stops = state.stops.toMutableList().also { it[index] = updated }.sortedBy { it.position }
+                    val stops =
+                        state.stops
+                            .toMutableList()
+                            .also { it[index] = updated }
+                            .sortedBy { it.position }
                     customize(state.copy(stops = stops))
                 },
                 onRemove = {

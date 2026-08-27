@@ -146,9 +146,18 @@ fun KeyboardScreen(
 
     val keyboard =
         when (mode) {
-            KeyboardMode.MAIN -> keyboardDefinition.modes.main
-            KeyboardMode.SHIFTED -> keyboardDefinition.modes.shifted
-            KeyboardMode.NUMERIC -> keyboardDefinition.modes.numeric
+            KeyboardMode.MAIN -> {
+                keyboardDefinition.modes.main
+            }
+
+            KeyboardMode.SHIFTED -> {
+                keyboardDefinition.modes.shifted
+            }
+
+            KeyboardMode.NUMERIC -> {
+                keyboardDefinition.modes.numeric
+            }
+
             KeyboardMode.CTRLED -> {
                 keyboardDefinition.modes.ctrled ?: run {
                     val text = stringResource(R.string.warning_invalid_mode, mode, keyboardDefinition.title)
@@ -158,6 +167,7 @@ fun KeyboardScreen(
                     keyboardDefinition.modes.main
                 }
             }
+
             KeyboardMode.ALTED -> {
                 keyboardDefinition.modes.alted ?: run {
                     val text = stringResource(R.string.warning_invalid_mode, mode, keyboardDefinition.title)
@@ -167,7 +177,10 @@ fun KeyboardScreen(
                     keyboardDefinition.modes.main
                 }
             }
-            else -> KB_EN_THUMBKEY_MAIN
+
+            else -> {
+                KB_EN_THUMBKEY_MAIN
+            }
         }
 
     val position = KeyboardPosition.entries[settings?.position ?: DEFAULT_POSITION]
@@ -217,7 +230,14 @@ fun KeyboardScreen(
 
     if (mode == KeyboardMode.EMOJI) {
         val rowCount = keyboardDefinition.modes.main.arr.size
-        val controllerKeys = if (rowCount <= 3) listOf(EMOJI_BACK_KEY_ITEM, BACKSPACE_KEY_ITEM, RETURN_KEY_ITEM) else listOf(EMOJI_BACK_KEY_ITEM, NUMERIC_KEY_ITEM, BACKSPACE_KEY_ITEM, RETURN_KEY_ITEM)
+        val controllerKeys =
+            if (rowCount <=
+                3
+            ) {
+                listOf(EMOJI_BACK_KEY_ITEM, BACKSPACE_KEY_ITEM, RETURN_KEY_ITEM)
+            } else {
+                listOf(EMOJI_BACK_KEY_ITEM, NUMERIC_KEY_ITEM, BACKSPACE_KEY_ITEM, RETURN_KEY_ITEM)
+            }
         val keyboardHeight = Dp((keyHeight * controllerKeys.size) - (keyPadding * 2))
         ctx.currentInputConnection.requestCursorUpdates(0)
         Box(
@@ -225,19 +245,46 @@ fun KeyboardScreen(
         ) {
             if (backdropEnabled) {
                 Box(
-                    modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(1.dp).background(color = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier =
+                        Modifier
+                            .align(
+                                Alignment.TopCenter,
+                            ).fillMaxWidth()
+                            .height(1.dp)
+                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
                 )
             }
             val emojiModeLayout = keyboardDefinition.modes.emoji
             if (emojiModeLayout != null) {
                 Column(
-                    modifier = Modifier.then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier).padding(bottom = pushupSizeDp).fillMaxWidth().then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
+                    modifier =
+                        Modifier
+                            .then(
+                                if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier,
+                            ).padding(
+                                bottom = pushupSizeDp,
+                            ).fillMaxWidth()
+                            .then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
                 ) {
                     val emojiPickerHeight = Dp((keyHeight * (emojiModeLayout.arr.size - 1)) - (keyPadding * 2))
                     Box(
-                        modifier = Modifier.padding(keyPadding.dp).clip(RoundedCornerShape(cornerRadius.dp)).then(
-                            if (keyBorderWidthFloat > 0.0) Modifier.border(keyBorderWidthFloat.dp, keyBorderColour, shape = RoundedCornerShape(cornerRadius.dp)) else Modifier,
-                        ).background(MaterialTheme.colorScheme.surface),
+                        modifier =
+                            Modifier
+                                .padding(keyPadding.dp)
+                                .clip(RoundedCornerShape(cornerRadius.dp))
+                                .then(
+                                    if (keyBorderWidthFloat >
+                                        0.0
+                                    ) {
+                                        Modifier.border(
+                                            keyBorderWidthFloat.dp,
+                                            keyBorderColour,
+                                            shape = RoundedCornerShape(cornerRadius.dp),
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
+                                ).background(MaterialTheme.colorScheme.surface),
                     ) {
                         val view = LocalView.current
                         val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -285,21 +332,70 @@ fun KeyboardScreen(
                                     slideCursorMovementMode = slideCursorMovementMode,
                                     slideSpacebarDeadzoneEnabled = slideSpacebarDeadzoneEnabled,
                                     slideBackspaceDeadzoneEnabled = slideBackspaceDeadzoneEnabled,
-                                    onToggleShiftMode = { enable -> mode = if (enable) KeyboardMode.SHIFTED else { capsLock = false; KeyboardMode.MAIN } },
+                                    onToggleShiftMode = { enable ->
+                                        mode =
+                                            if (enable) {
+                                                KeyboardMode.SHIFTED
+                                            } else {
+                                                capsLock = false
+                                                KeyboardMode.MAIN
+                                            }
+                                    },
                                     onToggleCtrlMode = { enable -> mode = if (enable) KeyboardMode.CTRLED else KeyboardMode.MAIN },
                                     onToggleAltMode = { enable -> mode = if (enable) KeyboardMode.ALTED else KeyboardMode.MAIN },
-                                    onToggleNumericMode = { enable -> mode = if (enable) KeyboardMode.NUMERIC else { capsLock = false; KeyboardMode.MAIN } },
+                                    onToggleNumericMode = { enable ->
+                                        mode =
+                                            if (enable) {
+                                                KeyboardMode.NUMERIC
+                                            } else {
+                                                capsLock = false
+                                                KeyboardMode.MAIN
+                                            }
+                                    },
                                     onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.MAIN },
                                     onToggleClipboardMode = { enable -> mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN },
-                                    onToggleCapsLock = { capsLock = !capsLock; if (capsLock) mode = KeyboardMode.SHIFTED },
+                                    onToggleCapsLock = {
+                                        capsLock = !capsLock
+                                        if (capsLock) mode = KeyboardMode.SHIFTED
+                                    },
                                     onToggleHideLetters = onToggleHideLetters,
-                                    onAutoCapitalize = { enable -> if (mode !== KeyboardMode.NUMERIC) mode = if (enable) KeyboardMode.SHIFTED else if (!capsLock) KeyboardMode.MAIN else mode },
-                                    onSwitchLanguage = { onSwitchLanguage(); mode = KeyboardMode.MAIN },
+                                    onAutoCapitalize = { enable ->
+                                        if (mode !==
+                                            KeyboardMode.NUMERIC
+                                        ) {
+                                            mode =
+                                                if (enable) {
+                                                    KeyboardMode.SHIFTED
+                                                } else if (!capsLock) {
+                                                    KeyboardMode.MAIN
+                                                } else {
+                                                    mode
+                                                }
+                                        }
+                                    },
+                                    onSwitchLanguage = {
+                                        onSwitchLanguage()
+                                        mode = KeyboardMode.MAIN
+                                    },
                                     onChangePosition = onChangePosition,
                                     onKeyEvent = { action ->
                                         when (mode) {
-                                            KeyboardMode.CTRLED, KeyboardMode.ALTED -> if (action is KeyAction.SendEvent) mode = KeyboardMode.MAIN
-                                            KeyboardMode.NUMERIC -> if (switchToLettersAfterSpace && action is KeyAction.CommitText && action.text == " ") { capsLock = false; mode = KeyboardMode.MAIN }
+                                            KeyboardMode.CTRLED, KeyboardMode.ALTED -> {
+                                                if (action is KeyAction.SendEvent) {
+                                                    mode =
+                                                        KeyboardMode.MAIN
+                                                }
+                                            }
+
+                                            KeyboardMode.NUMERIC -> {
+                                                if (switchToLettersAfterSpace && action is KeyAction.CommitText &&
+                                                    action.text == " "
+                                                ) {
+                                                    capsLock = false
+                                                    mode = KeyboardMode.MAIN
+                                                }
+                                            }
+
                                             else -> {}
                                         }
                                     },
@@ -315,12 +411,34 @@ fun KeyboardScreen(
                 }
             } else {
                 Row(
-                    modifier = Modifier.then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier).padding(bottom = pushupSizeDp).fillMaxWidth().then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
+                    modifier =
+                        Modifier
+                            .then(
+                                if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier,
+                            ).padding(
+                                bottom = pushupSizeDp,
+                            ).fillMaxWidth()
+                            .then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
                 ) {
                     Box(
-                        modifier = Modifier.weight(1f).padding(keyPadding.dp).clip(RoundedCornerShape(cornerRadius.dp)).then(
-                            if (keyBorderWidthFloat > 0.0) Modifier.border(keyBorderWidthFloat.dp, keyBorderColour, shape = RoundedCornerShape(cornerRadius.dp)) else Modifier,
-                        ).background(MaterialTheme.colorScheme.surface),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(keyPadding.dp)
+                                .clip(RoundedCornerShape(cornerRadius.dp))
+                                .then(
+                                    if (keyBorderWidthFloat >
+                                        0.0
+                                    ) {
+                                        Modifier.border(
+                                            keyBorderWidthFloat.dp,
+                                            keyBorderColour,
+                                            shape = RoundedCornerShape(cornerRadius.dp),
+                                        )
+                                    } else {
+                                        Modifier
+                                    },
+                                ).background(MaterialTheme.colorScheme.surface),
                     ) {
                         val view = LocalView.current
                         val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -367,21 +485,70 @@ fun KeyboardScreen(
                                     slideCursorMovementMode = slideCursorMovementMode,
                                     slideSpacebarDeadzoneEnabled = slideSpacebarDeadzoneEnabled,
                                     slideBackspaceDeadzoneEnabled = slideBackspaceDeadzoneEnabled,
-                                    onToggleShiftMode = { enable -> mode = if (enable) KeyboardMode.SHIFTED else { capsLock = false; KeyboardMode.MAIN } },
+                                    onToggleShiftMode = { enable ->
+                                        mode =
+                                            if (enable) {
+                                                KeyboardMode.SHIFTED
+                                            } else {
+                                                capsLock = false
+                                                KeyboardMode.MAIN
+                                            }
+                                    },
                                     onToggleCtrlMode = { enable -> mode = if (enable) KeyboardMode.CTRLED else KeyboardMode.MAIN },
                                     onToggleAltMode = { enable -> mode = if (enable) KeyboardMode.ALTED else KeyboardMode.MAIN },
-                                    onToggleNumericMode = { enable -> mode = if (enable) KeyboardMode.NUMERIC else { capsLock = false; KeyboardMode.MAIN } },
+                                    onToggleNumericMode = { enable ->
+                                        mode =
+                                            if (enable) {
+                                                KeyboardMode.NUMERIC
+                                            } else {
+                                                capsLock = false
+                                                KeyboardMode.MAIN
+                                            }
+                                    },
                                     onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.MAIN },
                                     onToggleClipboardMode = { enable -> mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN },
-                                    onToggleCapsLock = { capsLock = !capsLock; if (capsLock) mode = KeyboardMode.SHIFTED },
+                                    onToggleCapsLock = {
+                                        capsLock = !capsLock
+                                        if (capsLock) mode = KeyboardMode.SHIFTED
+                                    },
                                     onToggleHideLetters = onToggleHideLetters,
-                                    onAutoCapitalize = { enable -> if (mode !== KeyboardMode.NUMERIC) mode = if (enable) KeyboardMode.SHIFTED else if (!capsLock) KeyboardMode.MAIN else mode },
-                                    onSwitchLanguage = { onSwitchLanguage(); mode = KeyboardMode.MAIN },
+                                    onAutoCapitalize = { enable ->
+                                        if (mode !==
+                                            KeyboardMode.NUMERIC
+                                        ) {
+                                            mode =
+                                                if (enable) {
+                                                    KeyboardMode.SHIFTED
+                                                } else if (!capsLock) {
+                                                    KeyboardMode.MAIN
+                                                } else {
+                                                    mode
+                                                }
+                                        }
+                                    },
+                                    onSwitchLanguage = {
+                                        onSwitchLanguage()
+                                        mode = KeyboardMode.MAIN
+                                    },
                                     onChangePosition = onChangePosition,
                                     onKeyEvent = { action ->
                                         when (mode) {
-                                            KeyboardMode.CTRLED, KeyboardMode.ALTED -> if (action is KeyAction.SendEvent) mode = KeyboardMode.MAIN
-                                            KeyboardMode.NUMERIC -> if (switchToLettersAfterSpace && action is KeyAction.CommitText && action.text == " ") { capsLock = false; mode = KeyboardMode.MAIN }
+                                            KeyboardMode.CTRLED, KeyboardMode.ALTED -> {
+                                                if (action is KeyAction.SendEvent) {
+                                                    mode =
+                                                        KeyboardMode.MAIN
+                                                }
+                                            }
+
+                                            KeyboardMode.NUMERIC -> {
+                                                if (switchToLettersAfterSpace && action is KeyAction.CommitText &&
+                                                    action.text == " "
+                                                ) {
+                                                    capsLock = false
+                                                    mode = KeyboardMode.MAIN
+                                                }
+                                            }
+
                                             else -> {}
                                         }
                                     },
@@ -407,15 +574,34 @@ fun KeyboardScreen(
         }
         Box(modifier = Modifier.then(if (backdropEnabled) Modifier.keyboardGradientBackground(backdropGradient) else Modifier)) {
             if (backdropEnabled) {
-                Box(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(1.dp).background(color = MaterialTheme.colorScheme.surfaceVariant))
+                Box(
+                    modifier =
+                        Modifier
+                            .align(
+                                Alignment.TopCenter,
+                            ).fillMaxWidth()
+                            .height(1.dp)
+                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                )
             }
             Box(
-                modifier = Modifier.then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier).padding(bottom = pushupSizeDp).fillMaxWidth().height(keyboardHeight).then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
+                modifier =
+                    Modifier
+                        .then(
+                            if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier,
+                        ).padding(
+                            bottom = pushupSizeDp,
+                        ).fillMaxWidth()
+                        .height(keyboardHeight)
+                        .then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
             ) {
                 ClipboardHistoryScreen(
                     clipboardItems = clipboardItems,
                     isEnabled = clipboardHistoryEnabled,
-                    onItemClick = { item -> ctx.currentInputConnection.commitText(item.text, 1); mode = KeyboardMode.MAIN },
+                    onItemClick = { item ->
+                        ctx.currentInputConnection.commitText(item.text, 1)
+                        mode = KeyboardMode.MAIN
+                    },
                     onItemPaste = { item -> ctx.currentInputConnection.commitText(item.text, 1) },
                     onItemDelete = { item -> scope.launch { clipboardRepository.deleteItem(item) } },
                     onItemTogglePin = { item -> scope.launch { clipboardRepository.togglePin(item) } },
@@ -436,32 +622,64 @@ fun KeyboardScreen(
             Log.d(TAG, "request for cursor updates failed, cursor updates will not be provided")
         }
 
-        val gradientCanvasWidth = keyboard.arr.maxOfOrNull { row -> row.sumOf { key -> (key.widthMultiplier * keyWidth).toDouble() }.toFloat() } ?: keyWidth
+        val gradientCanvasWidth =
+            keyboard.arr.maxOfOrNull { row -> row.sumOf { key -> (key.widthMultiplier * keyWidth).toDouble() }.toFloat() } ?: keyWidth
         val gradientCanvasHeight = keyboard.arr.size * keyHeight
         val keyGradient = if (BuildConfig.DEBUG) BIRDIE_KEY_GRADIENT else null
 
         val drawKeyboard = @Composable { alignment: Alignment, drawBackdrop: Boolean, positionPaddingValue: Int ->
-            val modifierPositionPadding = if (positionPaddingValue > 0) Modifier.padding(start = positionPaddingValue.dp) else Modifier.padding(end = -positionPaddingValue.dp)
+            val modifierPositionPadding =
+                if (positionPaddingValue >
+                    0
+                ) {
+                    Modifier.padding(start = positionPaddingValue.dp)
+                } else {
+                    Modifier.padding(end = -positionPaddingValue.dp)
+                }
             Box(
                 contentAlignment = alignment,
-                modifier = Modifier.fillMaxWidth().then(if (drawBackdrop) Modifier.keyboardGradientBackground(backdropGradient) else Modifier).then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier).padding(bottom = pushupSizeDp).then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (drawBackdrop) Modifier.keyboardGradientBackground(backdropGradient) else Modifier,
+                        ).then(
+                            if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier,
+                        ).padding(bottom = pushupSizeDp)
+                        .then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
             ) {
                 if (drawBackdrop) {
-                    Box(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(1.dp).background(color = MaterialTheme.colorScheme.surfaceVariant))
+                    Box(
+                        modifier =
+                            Modifier
+                                .align(
+                                    Alignment.TopCenter,
+                                ).fillMaxWidth()
+                                .height(1.dp)
+                                .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                    )
                 }
                 Column(modifier = modifierPositionPadding) {
                     keyboard.arr.forEachIndexed { i, row ->
                         Row {
                             row.forEachIndexed { j, key ->
-                                val gradientOffsetX = row.take(j).sumOf { previousKey -> (previousKey.widthMultiplier * keyWidth).toDouble() }.toFloat()
+                                val gradientOffsetX =
+                                    row
+                                        .take(j)
+                                        .sumOf { previousKey ->
+                                            (previousKey.widthMultiplier * keyWidth).toDouble()
+                                        }.toFloat()
                                 val gradientOffsetY = i * keyHeight
                                 Column {
-                                    val ghostKey = if (ghostKeysEnabled) {
-                                        when (mode) {
-                                            KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> keyboardDefinition.modes.numeric
-                                            else -> null
-                                        }?.arr?.getOrNull(i)?.getOrNull(j)
-                                    } else null
+                                    val ghostKey =
+                                        if (ghostKeysEnabled) {
+                                            when (mode) {
+                                                KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> keyboardDefinition.modes.numeric
+                                                else -> null
+                                            }?.arr?.getOrNull(i)?.getOrNull(j)
+                                        } else {
+                                            null
+                                        }
                                     KeyboardKey(
                                         key = key,
                                         ghostKey = ghostKey,
@@ -490,33 +708,94 @@ fun KeyboardScreen(
                                         slideCursorMovementMode = slideCursorMovementMode,
                                         slideSpacebarDeadzoneEnabled = slideSpacebarDeadzoneEnabled,
                                         slideBackspaceDeadzoneEnabled = slideBackspaceDeadzoneEnabled,
-                                        onToggleShiftMode = { enable -> mode = if (enable) KeyboardMode.SHIFTED else { capsLock = false; KeyboardMode.MAIN } },
+                                        onToggleShiftMode = { enable ->
+                                            mode =
+                                                if (enable) {
+                                                    KeyboardMode.SHIFTED
+                                                } else {
+                                                    capsLock = false
+                                                    KeyboardMode.MAIN
+                                                }
+                                        },
                                         onToggleCtrlMode = { enable -> mode = if (enable) KeyboardMode.CTRLED else KeyboardMode.MAIN },
                                         onToggleAltMode = { enable -> mode = if (enable) KeyboardMode.ALTED else KeyboardMode.MAIN },
-                                        onToggleNumericMode = { enable -> mode = if (enable) KeyboardMode.NUMERIC else { capsLock = false; KeyboardMode.MAIN } },
+                                        onToggleNumericMode = { enable ->
+                                            mode =
+                                                if (enable) {
+                                                    KeyboardMode.NUMERIC
+                                                } else {
+                                                    capsLock = false
+                                                    KeyboardMode.MAIN
+                                                }
+                                        },
                                         onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.MAIN },
-                                        onToggleClipboardMode = { enable -> mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN },
-                                        onToggleCapsLock = { capsLock = !capsLock; if (capsLock) mode = KeyboardMode.SHIFTED },
+                                        onToggleClipboardMode = { enable ->
+                                            mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN
+                                        },
+                                        onToggleCapsLock = {
+                                            capsLock = !capsLock
+                                            if (capsLock) mode = KeyboardMode.SHIFTED
+                                        },
                                         onToggleHideLetters = onToggleHideLetters,
                                         onKeyEvent = { action ->
                                             when (mode) {
-                                                KeyboardMode.CTRLED, KeyboardMode.ALTED -> if (action is KeyAction.SendEvent) mode = KeyboardMode.MAIN
-                                                KeyboardMode.NUMERIC -> if (switchToLettersAfterSpace && action is KeyAction.CommitText && action.text == " ") { capsLock = false; mode = KeyboardMode.MAIN }
+                                                KeyboardMode.CTRLED, KeyboardMode.ALTED -> {
+                                                    if (action is KeyAction.SendEvent) {
+                                                        mode =
+                                                            KeyboardMode.MAIN
+                                                    }
+                                                }
+
+                                                KeyboardMode.NUMERIC -> {
+                                                    if (switchToLettersAfterSpace && action is KeyAction.CommitText &&
+                                                        action.text == " "
+                                                    ) {
+                                                        capsLock = false
+                                                        mode = KeyboardMode.MAIN
+                                                    }
+                                                }
+
                                                 else -> {}
                                             }
                                         },
-                                        onAutoCapitalize = { enable -> if (mode !== KeyboardMode.NUMERIC) mode = if (enable) KeyboardMode.SHIFTED else if (!capsLock) KeyboardMode.MAIN else mode },
-                                        onSwitchLanguage = { onSwitchLanguage(); mode = KeyboardMode.MAIN },
-                                        onChangePosition = onChangePosition,
-                                        oppositeCaseKey = when (mode) {
-                                            KeyboardMode.MAIN -> keyboardDefinition.modes.shifted
-                                            KeyboardMode.SHIFTED -> keyboardDefinition.modes.main
-                                            else -> null
-                                        }?.arr?.getOrNull(i)?.getOrNull(j),
-                                        numericKey = when (mode) {
-                                            KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> keyboardDefinition.modes.numeric.arr.getOrNull(i)?.getOrNull(j)
-                                            else -> null
+                                        onAutoCapitalize = { enable ->
+                                            if (mode !==
+                                                KeyboardMode.NUMERIC
+                                            ) {
+                                                mode =
+                                                    if (enable) {
+                                                        KeyboardMode.SHIFTED
+                                                    } else if (!capsLock) {
+                                                        KeyboardMode.MAIN
+                                                    } else {
+                                                        mode
+                                                    }
+                                            }
                                         },
+                                        onSwitchLanguage = {
+                                            onSwitchLanguage()
+                                            mode = KeyboardMode.MAIN
+                                        },
+                                        onChangePosition = onChangePosition,
+                                        oppositeCaseKey =
+                                            when (mode) {
+                                                KeyboardMode.MAIN -> keyboardDefinition.modes.shifted
+                                                KeyboardMode.SHIFTED -> keyboardDefinition.modes.main
+                                                else -> null
+                                            }?.arr?.getOrNull(i)?.getOrNull(j),
+                                        numericKey =
+                                            when (mode) {
+                                                KeyboardMode.MAIN, KeyboardMode.SHIFTED, KeyboardMode.CTRLED, KeyboardMode.ALTED -> {
+                                                    keyboardDefinition.modes.numeric.arr
+                                                        .getOrNull(
+                                                            i,
+                                                        )?.getOrNull(j)
+                                                }
+
+                                                else -> {
+                                                    null
+                                                }
+                                            },
                                         dragReturnEnabled = dragReturnEnabled,
                                         circularDragEnabled = circularDragEnabled,
                                         clockwiseDragAction = clockwiseDragAction,
