@@ -151,6 +151,7 @@ fun KeyboardKey(
     counterclockwiseDragAction: CircularDragAction,
     slideHoldEnabled: Boolean,
     keyGradient: KeyboardBackdrop? = null,
+    keyBorderGradient: KeyboardBackdrop? = BIRDIE_GOLD_BORDER,
     keyGradientCanvasWidth: Float = 0f,
     keyGradientCanvasHeight: Float = 0f,
     keyGradientOffsetX: Float = 0f,
@@ -387,16 +388,6 @@ fun KeyboardKey(
             .padding(keyPadding.dp)
             .clip(RoundedCornerShape(keyRadius.dp))
             .then(
-                if (keyBorderWidth > 0.0) {
-                    Modifier.border(
-                        keyBorderWidth.dp,
-                        keyBorderColour,
-                        shape = RoundedCornerShape(keyRadius.dp),
-                    )
-                } else {
-                    (Modifier)
-                },
-            ).then(
                 if (!(isDragged.value || isPressed) && keyGradient != null) {
                     Modifier.keyboardGradientSlice(
                         backdrop = keyGradient,
@@ -407,6 +398,24 @@ fun KeyboardKey(
                     )
                 } else {
                     Modifier.background(color = backgroundColor)
+                },
+            ).then(
+                if (keyBorderWidth > 0.0) {
+                    if (keyBorderGradient != null) {
+                        Modifier.keyboardGradientBorder(
+                            backdrop = keyBorderGradient,
+                            width = keyBorderWidth.dp,
+                            radius = keyRadius.dp,
+                        )
+                    } else {
+                        Modifier.border(
+                            keyBorderWidth.dp,
+                            keyBorderColour,
+                            shape = RoundedCornerShape(keyRadius.dp),
+                        )
+                    }
+                } else {
+                    Modifier
                 },
             )
             // Note: pointerInput has a delay when switching keyboards, so you must use this
