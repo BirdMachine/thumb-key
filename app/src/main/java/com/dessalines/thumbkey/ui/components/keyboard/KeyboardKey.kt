@@ -150,6 +150,11 @@ fun KeyboardKey(
     clockwiseDragAction: CircularDragAction,
     counterclockwiseDragAction: CircularDragAction,
     slideHoldEnabled: Boolean,
+    keyGradient: KeyboardBackdrop? = null,
+    keyGradientCanvasWidth: Float = 0f,
+    keyGradientCanvasHeight: Float = 0f,
+    keyGradientOffsetX: Float = 0f,
+    keyGradientOffsetY: Float = 0f,
 ) {
     // Necessary for swipe settings to get updated correctly
     val id =
@@ -391,7 +396,19 @@ fun KeyboardKey(
                 } else {
                     (Modifier)
                 },
-            ).background(color = backgroundColor)
+            ).then(
+                if (!(isDragged.value || isPressed) && keyGradient != null) {
+                    Modifier.keyboardGradientSlice(
+                        backdrop = keyGradient,
+                        canvasWidth = keyGradientCanvasWidth,
+                        canvasHeight = keyGradientCanvasHeight,
+                        offsetX = keyGradientOffsetX,
+                        offsetY = keyGradientOffsetY,
+                    )
+                } else {
+                    Modifier.background(color = backgroundColor)
+                },
+            )
             // Note: pointerInput has a delay when switching keyboards, so you must use this
             .combinedClickable(
                 interactionSource = interactionSource,

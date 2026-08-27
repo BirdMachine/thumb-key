@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.emoji2.emojipicker.EmojiPickerView
+import com.dessalines.thumbkey.BuildConfig
 import com.dessalines.thumbkey.IMEService
 import com.dessalines.thumbkey.R
 import com.dessalines.thumbkey.db.AppSettings
@@ -772,6 +773,13 @@ fun KeyboardScreen(
             Log.d(TAG, "request for cursor updates failed, cursor updates will not be provided")
         }
 
+        val gradientCanvasWidth =
+            keyboard.arr.maxOfOrNull { row ->
+                row.sumOf { key -> (key.widthMultiplier * keyWidth).toDouble() }.toFloat()
+            } ?: keyWidth
+        val gradientCanvasHeight = keyboard.arr.size * keyHeight
+        val keyGradient = if (BuildConfig.DEBUG) BIRDIE_KEY_GRADIENT else null
+
         val drawKeyboard = @Composable { alignment: Alignment, drawBackdrop: Boolean, positionPadding: Int ->
             val modifierPositionPadding =
                 if (positionPadding > 0) {
@@ -783,6 +791,7 @@ fun KeyboardScreen(
                 contentAlignment = alignment,
                 modifier =
                     Modifier
+                        .fillMaxWidth()
                         .then(if (drawBackdrop) Modifier.background(backdropColor) else (Modifier))
                         .then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier)
                         .padding(bottom = pushupSizeDp)
@@ -809,6 +818,11 @@ fun KeyboardScreen(
                     keyboard.arr.forEachIndexed { i, row ->
                         Row {
                             row.forEachIndexed { j, key ->
+                                val gradientOffsetX =
+                                    row.take(j).sumOf { previousKey ->
+                                        (previousKey.widthMultiplier * keyWidth).toDouble()
+                                    }.toFloat()
+                                val gradientOffsetY = i * keyHeight
                                 Column {
                                     val ghostKey =
                                         if (ghostKeysEnabled) {
@@ -978,6 +992,11 @@ fun KeyboardScreen(
                                         clockwiseDragAction = clockwiseDragAction,
                                         counterclockwiseDragAction = counterclockwiseDragAction,
                                         slideHoldEnabled = slideHoldEnabled,
+                                        keyGradient = keyGradient,
+                                        keyGradientCanvasWidth = gradientCanvasWidth,
+                                        keyGradientCanvasHeight = gradientCanvasHeight,
+                                        keyGradientOffsetX = gradientOffsetX,
+                                        keyGradientOffsetY = gradientOffsetY,
                                     )
                                 }
                             }
