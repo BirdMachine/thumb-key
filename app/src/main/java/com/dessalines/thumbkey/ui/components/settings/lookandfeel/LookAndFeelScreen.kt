@@ -341,9 +341,7 @@ fun LookAndFeelScreen(
                             )
                         },
                     )
-                    if (backdropEnabledState) {
-                        BackdropSettingsSection(onChanged = { updateLookAndFeel() })
-                    }
+                    BackdropSettingsSection(onChanged = { updateLookAndFeel() })
 
                     SwitchPreference(
                         value = ignoreBottomPaddingState,
