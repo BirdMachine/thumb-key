@@ -1,9 +1,9 @@
 package com.dessalines.thumbkey.ui.components.keyboard
 
 import android.text.InputType
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -28,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,8 +35,8 @@ import com.dessalines.thumbkey.IMEService
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
 private const val BAR_HEIGHT_DP = 42
+private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
 
 private object LocalSuggestionEngineV2 {
     private val commonWords =
