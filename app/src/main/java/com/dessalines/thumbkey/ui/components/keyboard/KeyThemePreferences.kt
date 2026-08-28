@@ -20,10 +20,12 @@ data class KeyThemeState(
 
 object KeyThemePreferences {
     private const val PREFS = "key_theme_preferences"
+    var current: KeyThemeState = KeyThemeState()
+        private set
 
     fun load(context: Context): KeyThemeState {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        return KeyThemeState(
+        current = KeyThemeState(
             surfaceStyle = enumValue(prefs.getString("surface_style", null), KeySurfaceStyle.GRADIENT),
             surfaceGradient = readGradient(prefs, "surface", BIRDIE_KEY_GRADIENT),
             surfaceColor = Color(prefs.getLong("surface_color", 0xFF242631L).toULong()),
@@ -34,9 +36,11 @@ object KeyThemePreferences {
             shadowAlpha = prefs.getFloat("shadow_alpha", 0.55f),
             shadowElevation = prefs.getFloat("shadow_elevation", 4f),
         )
+        return current
     }
 
     fun save(context: Context, state: KeyThemeState) {
+        current = state
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
             putString("surface_style", state.surfaceStyle.name)
             writeGradient(this, "surface", state.surfaceGradient)
