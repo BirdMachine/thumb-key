@@ -8,6 +8,9 @@ private const val PREFS_NAME = "birdie_backdrop_theme"
 private const val KEY_PRESET = "preset"
 private const val KEY_ANGLE = "angle"
 private const val KEY_STOPS = "stops"
+private const val KEY_MODE = "mode"
+private const val KEY_OPACITY = "opacity"
+private const val KEY_MEDIA_URI = "media_uri"
 
 enum class BackdropPreset {
     BIRDIE_RAINBOW,
@@ -15,10 +18,20 @@ enum class BackdropPreset {
     CUSTOM,
 }
 
+enum class BackdropMode {
+    COLORFUL,
+    IMAGE,
+    GIF,
+    NONE,
+}
+
 data class BackdropThemeState(
     val preset: BackdropPreset,
     val angleDegrees: Float,
     val stops: List<KeyboardGradientStop>,
+    val mode: BackdropMode = BackdropMode.COLORFUL,
+    val opacity: Float = 1f,
+    val mediaUri: String? = null,
 ) {
     fun toBackdrop(): KeyboardBackdrop =
         KeyboardBackdrop(
@@ -37,7 +50,20 @@ object BackdropThemePreferences {
         val fallback = stateForPreset(preset.takeUnless { it == BackdropPreset.CUSTOM } ?: BackdropPreset.BIRDIE_RAINBOW)
         val angle = prefs.getFloat(KEY_ANGLE, fallback.angleDegrees)
         val stops = decodeStops(prefs.getString(KEY_STOPS, null)) ?: fallback.stops
-        return BackdropThemeState(preset, angle, stops)
+        val mode =
+            runCatching {
+                BackdropMode.valueOf(prefs.getString(KEY_MODE, BackdropMode.COLORFUL.name)!!)
+            }.getOrDefault(BackdropMode.COLORFUL)
+        val opacity = prefs.getFloat(KEY_OPACITY, 1f).coerceIn(0f, 1f)
+        val mediaUri = prefs.getString(KEY_MEDIA_URI, null)
+        return BackdropThemeState(
+            preset = preset,
+            angleDegrees = angle,
+            stops = stops,
+            mode = mode,
+            opacity = opacity,
+            mediaUri = mediaUri,
+        )
     }
 
     fun save(
@@ -50,6 +76,9 @@ object BackdropThemePreferences {
             .putString(KEY_PRESET, state.preset.name)
             .putFloat(KEY_ANGLE, state.angleDegrees)
             .putString(KEY_STOPS, encodeStops(state.stops))
+            .putString(KEY_MODE, state.mode.name)
+            .putFloat(KEY_OPACITY, state.opacity.coerceIn(0f, 1f))
+            .putString(KEY_MEDIA_URI, state.mediaUri)
             .apply()
     }
 
