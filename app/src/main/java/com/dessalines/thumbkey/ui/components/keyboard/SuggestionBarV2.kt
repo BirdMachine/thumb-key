@@ -185,6 +185,21 @@ private fun suggestionExit(style: SuggestionMotionStyle): ExitTransition =
     }
 
 @Composable
+private fun AnimatedSuggestionCluster(
+    visible: Boolean,
+    motionStyle: SuggestionMotionStyle,
+    content: @Composable () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = suggestionEnter(motionStyle),
+        exit = suggestionExit(motionStyle),
+    ) {
+        content()
+    }
+}
+
+@Composable
 fun SuggestionBarV2(ime: IMEService) {
     var enabled by remember { mutableStateOf(SuggestionPreferences.enabled(ime)) }
     var prefix by remember { mutableStateOf("") }
@@ -254,10 +269,9 @@ fun SuggestionBarV2(ime: IMEService) {
                 modifier = Modifier.weight(1f).fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                AnimatedVisibility(
+                AnimatedSuggestionCluster(
                     visible = displayed.isNotEmpty(),
-                    enter = suggestionEnter(motionStyle),
-                    exit = suggestionExit(motionStyle),
+                    motionStyle = motionStyle,
                 ) {
                     Row(
                         modifier =
