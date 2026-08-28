@@ -1,5 +1,8 @@
 package com.dessalines.thumbkey.ui.components.settings.lookandfeel
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,11 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropPreset
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemeState
+import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardGradientStop
-import com.dessalines.thumbkey.ui.components.keyboard.keyboardGradientBackground
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import kotlin.math.roundToInt
 
 @Composable
@@ -36,6 +42,8 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
     var state by remember { mutableStateOf(BackdropThemePreferences.load(context)) }
     var stopsExpanded by remember { mutableStateOf(false) }
     var expandedStopIndex by remember { mutableStateOf<Int?>(null) }
+    var mediaPickMode by remember { mutableStateOf(BackdropMode.IMAGE) }
+    var motionStyle by remember { mutableStateOf(SuggestionMotionPreferences.load(context)) }
 
     fun persist(next: BackdropThemeState) {
         state = next
@@ -47,108 +55,201 @@ fun BackdropSettingsSection(onChanged: () -> Unit) {
         persist(next.copy(preset = BackdropPreset.CUSTOM))
     }
 
+    val mediaPicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                runCatching {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                }
+                persist(state.copy(mode = mediaPickMode, mediaUri = uri.toString()))
+            }
+        }
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("Backdrop gradient", style = MaterialTheme.typography.titleMedium)
-
+        Text("Backdrop source", style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PresetChip(
-                label = "Birdie Rainbow",
-                selected = state.preset == BackdropPreset.BIRDIE_RAINBOW,
-                onClick = {
-                    persist(BackdropThemePreferences.stateForPreset(BackdropPreset.BIRDIE_RAINBOW))
-                },
-            )
-            PresetChip(
-                label = "Sinebow",
-                selected = state.preset == BackdropPreset.SINEBOW,
-                onClick = {
-                    persist(BackdropThemePreferences.stateForPreset(BackdropPreset.SINEBOW))
-                },
-            )
-            FilterChip(
-                selected = state.preset == BackdropPreset.CUSTOM,
-                onClick = {},
-                label = { Text("Custom") },
-            )
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
-                    .keyboardGradientBackground(state.toBackdrop()),
-        )
-
-        Text("Angle: ${state.angleDegrees.roundToInt()}°")
-        Slider(
-            value = state.angleDegrees,
-            onValueChange = { customize(state.copy(angleDegrees = it)) },
-            valueRange = 0f..360f,
-        )
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { stopsExpanded = !stopsExpanded },
-        ) {
-            Text("Color stops (${state.stops.size}) ${if (stopsExpanded) "▲" else "▼"}")
-        }
-
-        if (stopsExpanded) {
-            state.stops.forEachIndexed { index, stop ->
-                CompactGradientStopEditor(
-                    index = index,
-                    stop = stop,
-                    expanded = expandedStopIndex == index,
-                    canRemove = state.stops.size > 1,
-                    onToggleExpanded = {
-                        expandedStopIndex = if (expandedStopIndex == index) null else index
-                    },
-                    onChange = { updated ->
-                        val stops =
-                            state.stops
-                                .toMutableList()
-                                .also { it[index] = updated }
-                                .sortedBy { it.position }
-                        customize(state.copy(stops = stops))
-                    },
-                    onRemove = {
-                        expandedStopIndex = null
-                        customize(state.copy(stops = state.stops.toMutableList().also { it.removeAt(index) }))
+            BackdropMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = state.mode == mode,
+                    onClick = { persist(state.copy(mode = mode)) },
+                    label = {
+                        Text(
+                            when (mode) {
+                                BackdropMode.COLORFUL -> "Colorful"
+                                BackdropMode.IMAGE -> "Image"
+                                BackdropMode.GIF -> "GIF"
+                                BackdropMode.NONE -> "None"
+                            },
+                        )
                     },
                 )
             }
+        }
 
+        Text("Backdrop opacity: ${(state.opacity * 100).roundToInt()}%")
+        Slider(
+            value = state.opacity,
+            onValueChange = { persist(state.copy(opacity = it)) },
+            valueRange = 0f..1f,
+        )
+
+        if (state.mode == BackdropMode.IMAGE || state.mode == BackdropMode.GIF) {
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    val position =
-                        if (state.stops.isEmpty()) {
-                            0.5f
-                        } else {
-                            val largestGap =
-                                state.stops
-                                    .sortedBy { it.position }
-                                    .zipWithNext()
-                                    .maxByOrNull { (a, b) -> b.position - a.position }
-                            if (largestGap != null) {
-                                (largestGap.first.position + largestGap.second.position) / 2f
-                            } else {
-                                0.5f
-                            }
-                        }
-                    val color = state.stops.firstOrNull()?.color ?: Color.White
-                    customize(
-                        state.copy(
-                            stops = (state.stops + KeyboardGradientStop(position, color)).sortedBy { it.position },
-                        ),
-                    )
+                    mediaPickMode = state.mode
+                    mediaPicker.launch(arrayOf("image/*"))
                 },
             ) {
-                Text("Add color stop")
+                Text(if (state.mediaUri == null) "Choose ${state.mode.name.lowercase()}" else "Change ${state.mode.name.lowercase()}")
+            }
+        }
+
+        if (state.mode != BackdropMode.NONE) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+            ) {
+                BackdropVisualLayer(state = state)
+            }
+        }
+
+        if (state.mode == BackdropMode.COLORFUL) {
+            Text("Colorful gradient", style = MaterialTheme.typography.titleMedium)
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                PresetChip(
+                    label = "Birdie Rainbow",
+                    selected = state.preset == BackdropPreset.BIRDIE_RAINBOW,
+                    onClick = {
+                        val preset = BackdropThemePreferences.stateForPreset(BackdropPreset.BIRDIE_RAINBOW)
+                        persist(
+                            state.copy(
+                                preset = BackdropPreset.BIRDIE_RAINBOW,
+                                angleDegrees = preset.angleDegrees,
+                                stops = preset.stops,
+                            ),
+                        )
+                    },
+                )
+                PresetChip(
+                    label = "Sinebow",
+                    selected = state.preset == BackdropPreset.SINEBOW,
+                    onClick = {
+                        val preset = BackdropThemePreferences.stateForPreset(BackdropPreset.SINEBOW)
+                        persist(
+                            state.copy(
+                                preset = BackdropPreset.SINEBOW,
+                                angleDegrees = preset.angleDegrees,
+                                stops = preset.stops,
+                            ),
+                        )
+                    },
+                )
+                FilterChip(
+                    selected = state.preset == BackdropPreset.CUSTOM,
+                    onClick = {},
+                    label = { Text("Custom") },
+                )
+            }
+
+            Text("Angle: ${state.angleDegrees.roundToInt()}°")
+            Slider(
+                value = state.angleDegrees,
+                onValueChange = { customize(state.copy(angleDegrees = it)) },
+                valueRange = 0f..360f,
+            )
+
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { stopsExpanded = !stopsExpanded },
+            ) {
+                Text("Color stops (${state.stops.size}) ${if (stopsExpanded) "▲" else "▼"}")
+            }
+
+            if (stopsExpanded) {
+                state.stops.forEachIndexed { index, stop ->
+                    CompactGradientStopEditor(
+                        index = index,
+                        stop = stop,
+                        expanded = expandedStopIndex == index,
+                        canRemove = state.stops.size > 1,
+                        onToggleExpanded = {
+                            expandedStopIndex = if (expandedStopIndex == index) null else index
+                        },
+                        onChange = { updated ->
+                            val stops =
+                                state.stops
+                                    .toMutableList()
+                                    .also { it[index] = updated }
+                                    .sortedBy { it.position }
+                            customize(state.copy(stops = stops))
+                        },
+                        onRemove = {
+                            expandedStopIndex = null
+                            customize(state.copy(stops = state.stops.toMutableList().also { it.removeAt(index) }))
+                        },
+                    )
+                }
+
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        val position =
+                            if (state.stops.isEmpty()) {
+                                0.5f
+                            } else {
+                                val largestGap =
+                                    state.stops
+                                        .sortedBy { it.position }
+                                        .zipWithNext()
+                                        .maxByOrNull { (a, b) -> b.position - a.position }
+                                if (largestGap != null) {
+                                    (largestGap.first.position + largestGap.second.position) / 2f
+                                } else {
+                                    0.5f
+                                }
+                            }
+                        val color = state.stops.firstOrNull()?.color ?: Color.White
+                        customize(
+                            state.copy(
+                                stops = (state.stops + KeyboardGradientStop(position, color)).sortedBy { it.position },
+                            ),
+                        )
+                    },
+                ) {
+                    Text("Add color stop")
+                }
+            }
+        }
+
+        Text("Suggestion motion", style = MaterialTheme.typography.titleMedium)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SuggestionMotionStyle.entries.forEach { style ->
+                FilterChip(
+                    selected = motionStyle == style,
+                    onClick = {
+                        motionStyle = style
+                        SuggestionMotionPreferences.save(context, style)
+                    },
+                    label = {
+                        Text(
+                            when (style) {
+                                SuggestionMotionStyle.NONE -> "None"
+                                SuggestionMotionStyle.SPRINGY -> "Springy"
+                                SuggestionMotionStyle.GOOEY -> "Gooey"
+                            },
+                        )
+                    },
+                )
             }
         }
     }
