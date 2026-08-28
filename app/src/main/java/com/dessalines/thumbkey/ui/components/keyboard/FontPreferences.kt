@@ -11,21 +11,34 @@ object FontPreferences {
     private const val KEY_NAME = "font_name"
 
     fun displayName(context: Context): String =
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_NAME, null) ?: "System default"
+        context
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(KEY_NAME, null) ?: "System default"
 
-    fun importFont(context: Context, uri: Uri): Boolean = runCatching {
-        val dir = File(context.filesDir, "keyboard-fonts").apply { mkdirs() }
-        val name = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "custom-font"
-        val extension = if (name.lowercase().endsWith(".otf")) ".otf" else ".ttf"
-        val target = File(dir, "active$extension")
-        context.contentResolver.openInputStream(uri)!!.use { input -> target.outputStream().use { input.copyTo(it) } }
-        Typeface.createFromFile(target)
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(KEY_FILE, target.absolutePath)
-            .putString(KEY_NAME, name)
-            .apply()
-        true
-    }.getOrDefault(false)
+    fun importFont(
+        context: Context,
+        uri: Uri,
+    ): Boolean =
+        runCatching {
+            val dir = File(context.filesDir, "keyboard-fonts").apply { mkdirs() }
+            val name =
+                uri.lastPathSegment
+                    ?.substringAfterLast('/')
+                    ?.takeIf { it.isNotBlank() } ?: "custom-font"
+            val extension = if (name.lowercase().endsWith(".otf")) ".otf" else ".ttf"
+            val target = File(dir, "active$extension")
+            context.contentResolver.openInputStream(uri)!!.use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+            Typeface.createFromFile(target)
+            context
+                .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_FILE, target.absolutePath)
+                .putString(KEY_NAME, name)
+                .apply()
+            true
+        }.getOrDefault(false)
 
     fun clear(context: Context) {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
