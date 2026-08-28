@@ -114,8 +114,11 @@ private object LocalSuggestionEngineV2 {
 
 private fun suggestionEnter(style: SuggestionMotionStyle): EnterTransition =
     when (style) {
-        SuggestionMotionStyle.NONE -> EnterTransition.None
-        SuggestionMotionStyle.SPRINGY ->
+        SuggestionMotionStyle.NONE -> {
+            EnterTransition.None
+        }
+
+        SuggestionMotionStyle.SPRINGY -> {
             fadeIn(tween(90)) +
                 scaleIn(
                     initialScale = 0.90f,
@@ -129,7 +132,9 @@ private fun suggestionEnter(style: SuggestionMotionStyle): EnterTransition =
                     initialOffsetX = { it / 7 },
                     animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                 )
-        SuggestionMotionStyle.GOOEY ->
+        }
+
+        SuggestionMotionStyle.GOOEY -> {
             fadeIn(tween(120)) +
                 scaleIn(
                     initialScale = 0.62f,
@@ -147,16 +152,22 @@ private fun suggestionEnter(style: SuggestionMotionStyle): EnterTransition =
                             stiffness = Spring.StiffnessLow,
                         ),
                 )
+        }
     }
 
 private fun suggestionExit(style: SuggestionMotionStyle): ExitTransition =
     when (style) {
-        SuggestionMotionStyle.NONE -> ExitTransition.None
-        SuggestionMotionStyle.SPRINGY ->
+        SuggestionMotionStyle.NONE -> {
+            ExitTransition.None
+        }
+
+        SuggestionMotionStyle.SPRINGY -> {
             fadeOut(tween(85)) +
                 scaleOut(targetScale = 0.88f, animationSpec = tween(110)) +
                 slideOutHorizontally(targetOffsetX = { -it / 8 }, animationSpec = tween(110))
-        SuggestionMotionStyle.GOOEY ->
+        }
+
+        SuggestionMotionStyle.GOOEY -> {
             fadeOut(tween(150)) +
                 scaleOut(
                     targetScale = 0.48f,
@@ -170,6 +181,7 @@ private fun suggestionExit(style: SuggestionMotionStyle): ExitTransition =
                     targetOffsetX = { -it / 3 },
                     animationSpec = tween(180),
                 )
+        }
     }
 
 @Composable
@@ -278,17 +290,23 @@ fun SuggestionBarV2(ime: IMEService) {
                                         .animateContentSize(
                                             animationSpec =
                                                 when (motionStyle) {
-                                                    SuggestionMotionStyle.NONE -> spring(stiffness = Spring.StiffnessHigh)
-                                                    SuggestionMotionStyle.SPRINGY ->
+                                                    SuggestionMotionStyle.NONE -> {
+                                                        spring(stiffness = Spring.StiffnessHigh)
+                                                    }
+
+                                                    SuggestionMotionStyle.SPRINGY -> {
                                                         spring(
                                                             dampingRatio = Spring.DampingRatioMediumBouncy,
                                                             stiffness = Spring.StiffnessMediumLow,
                                                         )
-                                                    SuggestionMotionStyle.GOOEY ->
+                                                    }
+
+                                                    SuggestionMotionStyle.GOOEY -> {
                                                         spring(
                                                             dampingRatio = 0.30f,
                                                             stiffness = Spring.StiffnessLow,
                                                         )
+                                                    }
                                                 },
                                         ).clickable {
                                             val currentPrefix = prefix
