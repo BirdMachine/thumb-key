@@ -2,23 +2,21 @@ package com.dessalines.thumbkey.ui.components.keyboard
 
 import android.content.Context
 import android.text.InputType
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,6 +50,7 @@ import java.util.Locale
 private const val BAR_HEIGHT_DP = 42
 private const val MOTION_PREFS = "suggestion_motion_preferences"
 private const val MOTION_STYLE = "motion_style"
+private const val MAX_VISIBLE_SUGGESTIONS = 5
 private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
 
 enum class SuggestionMotionStyle {
@@ -94,7 +93,7 @@ private object LocalSuggestionEngineV2 {
 
     fun suggest(
         prefix: String,
-        limit: Int = 5,
+        limit: Int = MAX_VISIBLE_SUGGESTIONS,
     ): List<String> {
         if (prefix.length < 2) return emptyList()
         val normalized = prefix.lowercase(Locale.US)
@@ -112,90 +111,148 @@ private object LocalSuggestionEngineV2 {
     }
 }
 
-private fun suggestionEnter(style: SuggestionMotionStyle): EnterTransition =
+private fun lozengeTransform(style: SuggestionMotionStyle): ContentTransform =
     when (style) {
         SuggestionMotionStyle.NONE -> {
-            EnterTransition.None
+            fadeIn(tween(1)) togetherWith fadeOut(tween(1))
         }
 
         SuggestionMotionStyle.SPRINGY -> {
-            fadeIn(tween(90)) +
-                scaleIn(
-                    initialScale = 0.90f,
-                    animationSpec =
-                        spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMediumLow,
-                        ),
-                ) +
-                slideInHorizontally(
-                    initialOffsetX = { it / 7 },
-                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                )
+            val enter =
+                fadeIn(tween(70)) +
+                    scaleIn(
+                        initialScale = 0.90f,
+                        animationSpec =
+                            keyframes {
+                                durationMillis = 190
+                                0.90f at 0
+                                1.055f at 70
+                                0.975f at 125
+                                1f at 190
+                            },
+                    )
+            val exit =
+                fadeOut(tween(120)) +
+                    scaleOut(
+                        targetScale = 0.86f,
+                        animationSpec =
+                            keyframes {
+                                durationMillis = 155
+                                1f at 0
+                                1.045f at 48
+                                0.965f at 92
+                                0.86f at 155
+                            },
+                    )
+            enter togetherWith exit
         }
 
         SuggestionMotionStyle.GOOEY -> {
-            fadeIn(tween(120)) +
-                scaleIn(
-                    initialScale = 0.62f,
-                    animationSpec =
-                        spring(
-                            dampingRatio = 0.34f,
-                            stiffness = Spring.StiffnessLow,
-                        ),
-                ) +
-                slideInHorizontally(
-                    initialOffsetX = { it / 3 },
-                    animationSpec =
-                        spring(
-                            dampingRatio = 0.42f,
-                            stiffness = Spring.StiffnessLow,
-                        ),
-                )
-        }
-    }
-
-private fun suggestionExit(style: SuggestionMotionStyle): ExitTransition =
-    when (style) {
-        SuggestionMotionStyle.NONE -> {
-            ExitTransition.None
-        }
-
-        SuggestionMotionStyle.SPRINGY -> {
-            fadeOut(tween(85)) +
-                scaleOut(targetScale = 0.88f, animationSpec = tween(110)) +
-                slideOutHorizontally(targetOffsetX = { -it / 8 }, animationSpec = tween(110))
-        }
-
-        SuggestionMotionStyle.GOOEY -> {
-            fadeOut(tween(150)) +
-                scaleOut(
-                    targetScale = 0.48f,
-                    animationSpec =
-                        spring(
-                            dampingRatio = 0.46f,
-                            stiffness = Spring.StiffnessLow,
-                        ),
-                ) +
-                slideOutHorizontally(
-                    targetOffsetX = { -it / 3 },
-                    animationSpec = tween(180),
-                )
+            val enter =
+                fadeIn(tween(95)) +
+                    scaleIn(
+                        initialScale = 0.58f,
+                        animationSpec =
+                            keyframes {
+                                durationMillis = 300
+                                0.58f at 0
+                                1.14f at 105
+                                0.92f at 175
+                                1.055f at 235
+                                1f at 300
+                            },
+                    )
+            val exit =
+                fadeOut(tween(190)) +
+                    scaleOut(
+                        targetScale = 0.48f,
+                        animationSpec =
+                            keyframes {
+                                durationMillis = 245
+                                1f at 0
+                                1.09f at 65
+                                0.91f at 125
+                                0.48f at 245
+                            },
+                    )
+            enter togetherWith exit
         }
     }
 
 @Composable
-private fun AnimatedSuggestionCluster(
-    visible: Boolean,
+private fun SuggestionLozengeSlot(
+    suggestion: String?,
+    slotIndex: Int,
+    displayedCount: Int,
     motionStyle: SuggestionMotionStyle,
-    content: @Composable () -> Unit,
+    onSuggestionClick: (String) -> Unit,
 ) {
-    AnimatedVisibility(
-        visible = visible,
-        enter = suggestionEnter(motionStyle),
-        exit = suggestionExit(motionStyle),
-    ) {
-        content()
+    AnimatedContent(
+        targetState = suggestion,
+        transitionSpec = { lozengeTransform(motionStyle) },
+        contentAlignment = Alignment.Center,
+        label = "suggestion-lozenge-$slotIndex",
+    ) { currentSuggestion ->
+        if (currentSuggestion == null) {
+            Box(modifier = Modifier)
+        } else {
+            val isBest = (displayedCount > 1 && slotIndex == 1) || displayedCount == 1
+            Box(modifier = Modifier.padding(end = 6.dp)) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color =
+                        MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = if (isBest) 0.72f else 0.50f,
+                        ),
+                    tonalElevation = if (isBest) 2.dp else 0.dp,
+                    shadowElevation = if (isBest) 2.dp else 1.dp,
+                    border =
+                        BorderStroke(
+                            if (isBest) 1.2.dp else 0.8.dp,
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = if (isBest) 0.28f else 0.16f,
+                            ),
+                        ),
+                    modifier =
+                        Modifier
+                            .widthIn(min = 58.dp, max = 180.dp)
+                            .animateContentSize(
+                                animationSpec =
+                                    when (motionStyle) {
+                                        SuggestionMotionStyle.NONE -> {
+                                            spring(stiffness = Spring.StiffnessHigh)
+                                        }
+
+                                        SuggestionMotionStyle.SPRINGY -> {
+                                            spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessMediumLow,
+                                            )
+                                        }
+
+                                        SuggestionMotionStyle.GOOEY -> {
+                                            spring(
+                                                dampingRatio = 0.30f,
+                                                stiffness = Spring.StiffnessLow,
+                                            )
+                                        }
+                                    },
+                            ).clickable { onSuggestionClick(currentSuggestion) },
+                ) {
+                    Text(
+                        text = currentSuggestion,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color =
+                            MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = if (isBest) 1f else 0.88f,
+                            ),
+                        fontWeight = if (isBest) FontWeight.Bold else FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -269,82 +326,29 @@ fun SuggestionBarV2(ime: IMEService) {
                 modifier = Modifier.weight(1f).fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                AnimatedSuggestionCluster(
-                    visible = displayed.isNotEmpty(),
-                    motionStyle = motionStyle,
+                Row(
+                    modifier =
+                        Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .horizontalScroll(rememberScrollState())
-                                .padding(horizontal = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        displayed.forEachIndexed { index, suggestion ->
-                            val isBest = (displayed.size > 1 && index == 1) || displayed.size == 1
-                            Surface(
-                                shape = RoundedCornerShape(18.dp),
-                                color =
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(
-                                        alpha = if (isBest) 0.72f else 0.50f,
-                                    ),
-                                tonalElevation = if (isBest) 2.dp else 0.dp,
-                                shadowElevation = if (isBest) 2.dp else 1.dp,
-                                border =
-                                    BorderStroke(
-                                        if (isBest) 1.2.dp else 0.8.dp,
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = if (isBest) 0.28f else 0.16f,
-                                        ),
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .widthIn(min = 58.dp, max = 180.dp)
-                                        .animateContentSize(
-                                            animationSpec =
-                                                when (motionStyle) {
-                                                    SuggestionMotionStyle.NONE -> {
-                                                        spring(stiffness = Spring.StiffnessHigh)
-                                                    }
-
-                                                    SuggestionMotionStyle.SPRINGY -> {
-                                                        spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessMediumLow,
-                                                        )
-                                                    }
-
-                                                    SuggestionMotionStyle.GOOEY -> {
-                                                        spring(
-                                                            dampingRatio = 0.30f,
-                                                            stiffness = Spring.StiffnessLow,
-                                                        )
-                                                    }
-                                                },
-                                        ).clickable {
-                                            val currentPrefix = prefix
-                                            if (currentPrefix.isNotEmpty()) {
-                                                ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)
-                                                ime.currentInputConnection?.commitText("$suggestion ", 1)
-                                                prefix = ""
-                                                suggestions = emptyList()
-                                            }
-                                        },
-                            ) {
-                                Text(
-                                    text = suggestion,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = if (isBest) 1f else 0.88f,
-                                        ),
-                                    fontWeight = if (isBest) FontWeight.Bold else FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
-                                )
-                            }
-                        }
+                    repeat(MAX_VISIBLE_SUGGESTIONS) { slotIndex ->
+                        SuggestionLozengeSlot(
+                            suggestion = displayed.getOrNull(slotIndex),
+                            slotIndex = slotIndex,
+                            displayedCount = displayed.size,
+                            motionStyle = motionStyle,
+                            onSuggestionClick = { suggestion ->
+                                val currentPrefix = prefix
+                                if (currentPrefix.isNotEmpty()) {
+                                    ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)
+                                    ime.currentInputConnection?.commitText("$suggestion ", 1)
+                                    prefix = ""
+                                    suggestions = emptyList()
+                                }
+                            },
+                        )
                     }
                 }
             }
