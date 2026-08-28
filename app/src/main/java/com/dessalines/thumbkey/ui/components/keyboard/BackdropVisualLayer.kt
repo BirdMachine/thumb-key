@@ -7,7 +7,6 @@ import android.widget.ImageView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
@@ -59,11 +58,10 @@ fun BackdropVisualLayer(
                     }
                 },
             )
-            LaunchedEffect(uri, state.mode) {
-                // Keeps Compose aware of persisted URI changes even though ImageView owns playback.
-            }
         }
 
-        BackdropMode.NONE -> Unit
+        BackdropMode.NONE -> {
+            Unit
+        }
     }
 }
