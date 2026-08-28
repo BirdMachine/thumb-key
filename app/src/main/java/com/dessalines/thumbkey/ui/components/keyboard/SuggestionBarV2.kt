@@ -1,9 +1,20 @@
 package com.dessalines.thumbkey.ui.components.keyboard
 
+import android.content.Context
 import android.text.InputType
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -28,6 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,7 +50,37 @@ import kotlinx.coroutines.delay
 import java.util.Locale
 
 private const val BAR_HEIGHT_DP = 42
+private const val MOTION_PREFS = "suggestion_motion_preferences"
+private const val MOTION_STYLE = "motion_style"
 private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
+
+enum class SuggestionMotionStyle {
+    NONE,
+    SPRINGY,
+    GOOEY,
+}
+
+object SuggestionMotionPreferences {
+    fun load(context: Context): SuggestionMotionStyle {
+        val stored =
+            context
+                .getSharedPreferences(MOTION_PREFS, Context.MODE_PRIVATE)
+                .getString(MOTION_STYLE, SuggestionMotionStyle.SPRINGY.name)
+        return runCatching { SuggestionMotionStyle.valueOf(stored!!) }
+            .getOrDefault(SuggestionMotionStyle.SPRINGY)
+    }
+
+    fun save(
+        context: Context,
+        style: SuggestionMotionStyle,
+    ) {
+        context
+            .getSharedPreferences(MOTION_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(MOTION_STYLE, style.name)
+            .apply()
+    }
+}
 
 private object LocalSuggestionEngineV2 {
     private val commonWords =
@@ -68,11 +112,72 @@ private object LocalSuggestionEngineV2 {
     }
 }
 
+private fun suggestionEnter(style: SuggestionMotionStyle): EnterTransition =
+    when (style) {
+        SuggestionMotionStyle.NONE -> EnterTransition.None
+        SuggestionMotionStyle.SPRINGY ->
+            fadeIn(tween(90)) +
+                scaleIn(
+                    initialScale = 0.90f,
+                    animationSpec =
+                        spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMediumLow,
+                        ),
+                ) +
+                slideInHorizontally(
+                    initialOffsetX = { it / 7 },
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                )
+        SuggestionMotionStyle.GOOEY ->
+            fadeIn(tween(120)) +
+                scaleIn(
+                    initialScale = 0.62f,
+                    animationSpec =
+                        spring(
+                            dampingRatio = 0.34f,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                ) +
+                slideInHorizontally(
+                    initialOffsetX = { it / 3 },
+                    animationSpec =
+                        spring(
+                            dampingRatio = 0.42f,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                )
+    }
+
+private fun suggestionExit(style: SuggestionMotionStyle): ExitTransition =
+    when (style) {
+        SuggestionMotionStyle.NONE -> ExitTransition.None
+        SuggestionMotionStyle.SPRINGY ->
+            fadeOut(tween(85)) +
+                scaleOut(targetScale = 0.88f, animationSpec = tween(110)) +
+                slideOutHorizontally(targetOffsetX = { -it / 8 }, animationSpec = tween(110))
+        SuggestionMotionStyle.GOOEY ->
+            fadeOut(tween(150)) +
+                scaleOut(
+                    targetScale = 0.48f,
+                    animationSpec =
+                        spring(
+                            dampingRatio = 0.46f,
+                            stiffness = Spring.StiffnessLow,
+                        ),
+                ) +
+                slideOutHorizontally(
+                    targetOffsetX = { -it / 3 },
+                    animationSpec = tween(180),
+                )
+    }
+
 @Composable
 fun SuggestionBarV2(ime: IMEService) {
     var enabled by remember { mutableStateOf(SuggestionPreferences.enabled(ime)) }
     var prefix by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
+    val motionStyle = remember { SuggestionMotionPreferences.load(ime) }
 
     val inputType = ime.currentInputEditorInfo?.inputType ?: 0
     val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -107,10 +212,27 @@ fun SuggestionBarV2(ime: IMEService) {
             2 -> listOf(suggestions[1], suggestions[0])
             else -> listOf(suggestions[1], suggestions[0]) + suggestions.drop(2)
         }
+    val borderStops = BIRDIE_GOLD_BORDER.stops.map { it.position to it.color }.toTypedArray()
 
     Surface(
         color = MaterialTheme.colorScheme.surface.copy(alpha = if (enabled) 0.30f else 0.20f),
-        modifier = Modifier.fillMaxWidth().height(BAR_HEIGHT_DP.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(BAR_HEIGHT_DP.dp)
+                .drawWithCache {
+                    val brush = Brush.linearGradient(colorStops = borderStops)
+                    val strokeWidth = 2.dp.toPx()
+                    onDrawWithContent {
+                        drawContent()
+                        drawLine(
+                            brush = brush,
+                            start = Offset(0f, size.height - (strokeWidth / 2f)),
+                            end = Offset(size.width, size.height - (strokeWidth / 2f)),
+                            strokeWidth = strokeWidth,
+                        )
+                    }
+                },
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 4.dp),
@@ -120,61 +242,76 @@ fun SuggestionBarV2(ime: IMEService) {
                 modifier = Modifier.weight(1f).fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .horizontalScroll(rememberScrollState())
-                            .padding(horizontal = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                AnimatedVisibility(
+                    visible = displayed.isNotEmpty(),
+                    enter = suggestionEnter(motionStyle),
+                    exit = suggestionExit(motionStyle),
                 ) {
-                    displayed.forEachIndexed { index, suggestion ->
-                        val isBest = (displayed.size > 1 && index == 1) || displayed.size == 1
-                        Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color =
-                                MaterialTheme.colorScheme.surfaceVariant.copy(
-                                    alpha = if (isBest) 0.72f else 0.50f,
-                                ),
-                            tonalElevation = if (isBest) 2.dp else 0.dp,
-                            shadowElevation = if (isBest) 2.dp else 1.dp,
-                            border =
-                                BorderStroke(
-                                    if (isBest) 1.2.dp else 0.8.dp,
-                                    MaterialTheme.colorScheme.onSurface.copy(
-                                        alpha = if (isBest) 0.28f else 0.16f,
-                                    ),
-                                ),
-                            modifier =
-                                Modifier
-                                    .widthIn(min = 58.dp, max = 180.dp)
-                                    .animateContentSize(
-                                        animationSpec =
-                                            spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessMediumLow,
-                                            ),
-                                    ).clickable {
-                                        val currentPrefix = prefix
-                                        if (currentPrefix.isNotEmpty()) {
-                                            ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)
-                                            ime.currentInputConnection?.commitText("$suggestion ", 1)
-                                            prefix = ""
-                                            suggestions = emptyList()
-                                        }
-                                    },
-                        ) {
-                            Text(
-                                text = suggestion,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                    Row(
+                        modifier =
+                            Modifier
+                                .horizontalScroll(rememberScrollState())
+                                .padding(horizontal = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        displayed.forEachIndexed { index, suggestion ->
+                            val isBest = (displayed.size > 1 && index == 1) || displayed.size == 1
+                            Surface(
+                                shape = RoundedCornerShape(18.dp),
                                 color =
-                                    MaterialTheme.colorScheme.onSurface.copy(
-                                        alpha = if (isBest) 1f else 0.88f,
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = if (isBest) 0.72f else 0.50f,
                                     ),
-                                fontWeight = if (isBest) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
-                            )
+                                tonalElevation = if (isBest) 2.dp else 0.dp,
+                                shadowElevation = if (isBest) 2.dp else 1.dp,
+                                border =
+                                    BorderStroke(
+                                        if (isBest) 1.2.dp else 0.8.dp,
+                                        MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = if (isBest) 0.28f else 0.16f,
+                                        ),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .widthIn(min = 58.dp, max = 180.dp)
+                                        .animateContentSize(
+                                            animationSpec =
+                                                when (motionStyle) {
+                                                    SuggestionMotionStyle.NONE -> spring(stiffness = Spring.StiffnessHigh)
+                                                    SuggestionMotionStyle.SPRINGY ->
+                                                        spring(
+                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                            stiffness = Spring.StiffnessMediumLow,
+                                                        )
+                                                    SuggestionMotionStyle.GOOEY ->
+                                                        spring(
+                                                            dampingRatio = 0.30f,
+                                                            stiffness = Spring.StiffnessLow,
+                                                        )
+                                                },
+                                        ).clickable {
+                                            val currentPrefix = prefix
+                                            if (currentPrefix.isNotEmpty()) {
+                                                ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)
+                                                ime.currentInputConnection?.commitText("$suggestion ", 1)
+                                                prefix = ""
+                                                suggestions = emptyList()
+                                            }
+                                        },
+                            ) {
+                                Text(
+                                    text = suggestion,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color =
+                                        MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = if (isBest) 1f else 0.88f,
+                                        ),
+                                    fontWeight = if (isBest) FontWeight.Bold else FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -198,13 +335,7 @@ fun SuggestionBarV2(ime: IMEService) {
                 modifier =
                     Modifier
                         .padding(start = 5.dp)
-                        .animateContentSize(
-                            animationSpec =
-                                spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMediumLow,
-                                ),
-                        ).clickable {
+                        .clickable {
                             enabled = !enabled
                             SuggestionPreferences.setEnabled(ime, enabled)
                         },
