@@ -22,7 +22,7 @@ import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
 import com.dessalines.thumbkey.db.DEFAULT_BACKDROP_ENABLED
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
-import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBar
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
 import com.dessalines.thumbkey.ui.components.keyboard.VIOLENTLY_GARISH_BACKDROP
 import com.dessalines.thumbkey.ui.components.keyboard.keyboardGradientBackground
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
@@ -71,7 +71,7 @@ class ComposeKeyboardView(
                 ) {
                     MaterialTheme(colorScheme = keyboardColorScheme) {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            SuggestionBar(ctx)
+                            SuggestionBarV2(ctx)
                             KeyboardScreen(
                                 settings = settings,
                                 clipboardRepository = clipboardRepo,
