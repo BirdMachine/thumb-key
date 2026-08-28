@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -60,7 +61,13 @@ class ComposeKeyboardView(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     if (backdropEnabled) {
-                        BackdropVisualLayer(state = backdropState)
+                        // matchParentSize is deliberately used instead of fillMaxSize here.
+                        // The backdrop should paint behind the measured keyboard content,
+                        // never participate in measurement and expand the IME to screen height.
+                        BackdropVisualLayer(
+                            state = backdropState,
+                            modifier = Modifier.matchParentSize(),
+                        )
                     }
                     MaterialTheme(colorScheme = keyboardColorScheme) {
                         Column(modifier = Modifier.fillMaxWidth()) {
