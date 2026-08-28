@@ -21,10 +21,10 @@ import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
 import com.dessalines.thumbkey.db.DEFAULT_BACKDROP_ENABLED
+import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
-import com.dessalines.thumbkey.ui.components.keyboard.VIOLENTLY_GARISH_BACKDROP
-import com.dessalines.thumbkey.ui.components.keyboard.keyboardGradientBackground
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
 import com.dessalines.thumbkey.utils.KeyboardPosition
 import com.dessalines.thumbkey.utils.keyboardLayoutsSetFromDbIndexString
@@ -49,6 +49,7 @@ class ComposeKeyboardView(
         ) {
             val backdropEnabled =
                 BuildConfig.DEBUG || (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
+            val backdropState = BackdropThemePreferences.load(ctx)
             val keyboardColorScheme =
                 if (backdropEnabled) {
                     MaterialTheme.colorScheme.copy(background = Color.Transparent)
@@ -57,18 +58,10 @@ class ComposeKeyboardView(
                 }
 
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (backdropEnabled) {
-                                    Modifier.keyboardGradientBackground(VIOLENTLY_GARISH_BACKDROP)
-                                } else {
-                                    Modifier
-                                },
-                            ),
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (backdropEnabled) {
+                        BackdropVisualLayer(state = backdropState)
+                    }
                     MaterialTheme(colorScheme = keyboardColorScheme) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             SuggestionBarV2(ctx)
