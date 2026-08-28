@@ -103,8 +103,7 @@ object BackdropThemePreferences {
             }
         }
 
-    private fun encodeStops(stops: List<KeyboardGradientStop>): String =
-        stops.joinToString(";") { "${it.position},${it.color.toArgb()}" }
+    private fun encodeStops(stops: List<KeyboardGradientStop>): String = stops.joinToString(";") { "${it.position},${it.color.toArgb()}" }
 
     private fun decodeStops(encoded: String?): List<KeyboardGradientStop>? {
         if (encoded.isNullOrBlank()) return null
