@@ -1,0 +1,58 @@
+name: One-off new word highlight color patch
+
+on:
+  push:
+    branches:
+      - birdie/gradient-backgrounds
+    paths:
+      - .github/workflows/oneoff-new-word-highlight.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+      - name: Patch new-word highlight color UI and runtime
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          bar = Path('app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt')
+          s = bar.read_text()
+          s = s.replace('private val MATRIX_WORD_GREEN = Color(0xFF52FF52)\n', '')
+          s = s.replace(
+              '    val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)\n',
+              '    val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)\n    var newWordHighlightColor by remember { mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(ime)) }\n'
+          )
+          s = s.replace(
+              '            longPressAddWord = AdvancedKeyWordPreferences.longPressAddWord(ime)\n',
+              '            longPressAddWord = AdvancedKeyWordPreferences.longPressAddWord(ime)\n            newWordHighlightColor = AdvancedKeyWordPreferences.newWordHighlightColor(ime)\n'
+          )
+          s = s.replace('BorderStroke(1.dp, MATRIX_WORD_GREEN)', 'BorderStroke(1.dp, newWordHighlightColor)')
+          s = s.replace('                                MATRIX_WORD_GREEN\n', '                                newWordHighlightColor\n')
+          bar.write_text(s)
+
+          screen = Path('app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/AdvancedLookAndFeelScreen.kt')
+          s = screen.read_text()
+          marker = 'import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode\n'
+          s = s.replace(marker, marker + 'import com.dessalines.thumbkey.ui.components.keyboard.AdvancedKeyWordPreferences\n')
+          old = '''    var fontName by remember { mutableStateOf(FontPreferences.displayName(context)) }\n    var motion by remember { mutableStateOf(SuggestionMotionPreferences.load(context)) }\n'''
+          new = '''    var fontName by remember { mutableStateOf(FontPreferences.displayName(context)) }\n    var motion by remember { mutableStateOf(SuggestionMotionPreferences.load(context)) }\n    var newWordHighlightColor by remember {\n        mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(context))\n    }\n'''
+          s = s.replace(old, new)
+          old = '''        Text("Suggestions", style = MaterialTheme.typography.titleSmall)\n        Text("Motion style", style = MaterialTheme.typography.titleSmall)\n'''
+          new = '''        Text("Suggestions", style = MaterialTheme.typography.titleSmall)\n        Text(\n            "New Word Highlight color",\n            style = MaterialTheme.typography.titleSmall,\n        )\n        Text(\n            "Used for the unfinished/current-word chip. Matrix green is the default.",\n            style = MaterialTheme.typography.bodySmall,\n        )\n        ColorEditor("New Word Highlight", newWordHighlightColor) { color ->\n            newWordHighlightColor = color\n            AdvancedKeyWordPreferences.setNewWordHighlightColor(context, color)\n        }\n        Text("Motion style", style = MaterialTheme.typography.titleSmall)\n'''
+          s = s.replace(old, new)
+          screen.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "Keywi CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/AdvancedLookAndFeelScreen.kt
+          git commit -m "Add New Word Highlight color setting"
+          git push origin HEAD:birdie/gradient-backgrounds
