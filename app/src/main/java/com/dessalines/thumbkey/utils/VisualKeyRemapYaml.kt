@@ -25,8 +25,9 @@ private fun KeyboardCSerializable.withKeyItem(
     val propertyName = "key${row}_$col"
     val copyFunction = KeyboardCSerializable::class.memberFunctions.first { it.name == "copy" }
     val instance = copyFunction.instanceParameter ?: error("KeyboardCSerializable.copy has no instance parameter")
-    val target = copyFunction.parameters.firstOrNull { it.name == propertyName }
-        ?: error("Unsupported key coordinate $row,$col")
+    val target =
+        copyFunction.parameters.firstOrNull { it.name == propertyName }
+            ?: error("Unsupported key coordinate $row,$col")
     val args = mutableMapOf<KParameter, Any?>(instance to this, target to item)
     return copyFunction.callBy(args) as KeyboardCSerializable
 }
@@ -95,7 +96,11 @@ fun getVisualTextOverride(
 ): String? {
     if (yaml.isBlank()) return null
     val all = deserializeKeyModifications(yaml)
-    return all[layoutName]?.mode(mode)?.keyItem(row, col)?.slot(slot)?.text
+    return all[layoutName]
+        ?.mode(mode)
+        ?.keyItem(row, col)
+        ?.slot(slot)
+        ?.text
 }
 
 fun updateVisualTextOverride(
