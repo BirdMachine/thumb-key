@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -154,23 +155,25 @@ class ComposeKeyboardView(
                                     KeyboardPosition.Center
                                 }
 
-                            // Fishwi deliberately occupies only the otherwise-unused side gutter. The normal
-                            // keyboard remains untouched and can keep following Keywi upstream changes.
+                            // Leave a little breathing room between the aquarium glass and the nearest keys.
+                            // 29% is intentionally conservative because key widths and position padding are configurable.
                             if (keywiEnabled && keyboardPosition == KeyboardPosition.Right) {
                                 FishwiAquarium(
                                     modifier =
                                         Modifier
                                             .align(Alignment.CenterStart)
-                                            .fillMaxWidth(0.34f)
-                                            .fillMaxHeight(),
+                                            .fillMaxWidth(0.29f)
+                                            .fillMaxHeight()
+                                            .padding(end = 3.dp),
                                 )
                             } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left) {
                                 FishwiAquarium(
                                     modifier =
                                         Modifier
                                             .align(Alignment.CenterEnd)
-                                            .fillMaxWidth(0.34f)
-                                            .fillMaxHeight(),
+                                            .fillMaxWidth(0.29f)
+                                            .fillMaxHeight()
+                                            .padding(start = 3.dp),
                                 )
                             }
 
