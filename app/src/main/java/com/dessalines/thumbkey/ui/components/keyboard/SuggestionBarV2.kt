@@ -377,7 +377,7 @@ fun SuggestionBarV2(ime: IMEService) {
             if (nextToken != currentToken || nextPrefix != prefix) {
                 currentToken = nextToken
                 prefix = nextPrefix
-                suggestions = LocalSuggestionEngineV2.suggest(nextPrefix)
+                suggestions = KeywiSuggestionEngine.suggest(ime, nextToken, nextPrefix, MAX_VISIBLE_SUGGESTIONS)
             }
             delay(80)
         }
@@ -464,6 +464,14 @@ fun SuggestionBarV2(ime: IMEService) {
                                                 Locale.getDefault(),
                                             )
                                         }.onSuccess {
+                                            KeywiPersonalDictionary.add(ime, word)
+                                            suggestions =
+                                                KeywiSuggestionEngine.suggest(
+                                                    ime,
+                                                    currentToken,
+                                                    prefix,
+                                                    MAX_VISIBLE_SUGGESTIONS,
+                                                )
                                             justAddedWord = word
                                             Toast
                                                 .makeText(
