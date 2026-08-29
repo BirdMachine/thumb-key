@@ -8,7 +8,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -128,12 +127,7 @@ class ComposeKeyboardView(
                                     .fillMaxWidth()
                                     .clipToBounds()
                                     .zIndex(0f)
-                                    .fishwiInputObserver()
-                                    .onSizeChanged { size ->
-                                        if (size.height != keyboardHeightPx) {
-                                            keyboardHeightPx = size.height
-                                        }
-                                    },
+                                    .fishwiInputObserver(),
                         ) {
                             if (
                                 keywiEnabled &&
@@ -154,25 +148,31 @@ class ComposeKeyboardView(
                                 KeyboardPosition.entries.getOrElse(settings?.position ?: KeyboardPosition.Center.ordinal) {
                                     KeyboardPosition.Center
                                 }
+                            val aquariumHeight =
+                                if (keyboardHeightPx > 0) {
+                                    with(density) { keyboardHeightPx.toDp() }
+                                } else {
+                                    1.dp
+                                }
 
-                            // Leave a little breathing room between the aquarium glass and the nearest keys.
-                            // 29% is intentionally conservative because key widths and position padding are configurable.
-                            if (keywiEnabled && keyboardPosition == KeyboardPosition.Right) {
+                            // The aquarium gets the same measured height as the rendered keyboard rather
+                            // than filling the IME window. This keeps the little world beside the keys.
+                            if (keywiEnabled && keyboardPosition == KeyboardPosition.Right && keyboardHeightPx > 0) {
                                 FishwiAquarium(
                                     modifier =
                                         Modifier
-                                            .align(Alignment.CenterStart)
+                                            .align(Alignment.TopStart)
                                             .fillMaxWidth(0.29f)
-                                            .fillMaxHeight()
+                                            .height(aquariumHeight)
                                             .padding(end = 3.dp),
                                 )
-                            } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left) {
+                            } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left && keyboardHeightPx > 0) {
                                 FishwiAquarium(
                                     modifier =
                                         Modifier
-                                            .align(Alignment.CenterEnd)
+                                            .align(Alignment.TopEnd)
                                             .fillMaxWidth(0.29f)
-                                            .fillMaxHeight()
+                                            .height(aquariumHeight)
                                             .padding(start = 3.dp),
                                 )
                             }
@@ -186,66 +186,75 @@ class ComposeKeyboardView(
                                     settings?.copy(backdropEnabled = 0)
                                 }
 
-                            KeyboardScreen(
-                                settings = keyboardSettings,
-                                clipboardRepository = clipboardRepo,
-                                onSwitchLanguage = {
-                                    ctx.lifecycleScope.launch {
-                                        val state = settingsState.value
-                                        state?.let { s ->
-                                            val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
-                                            val currentLayout = s.keyboardLayout
-                                            val index = layouts.map { it.ordinal }.indexOf(currentLayout)
-                                            val nextIndex = (index + 1).mod(layouts.size)
-                                            val nextLayout = layouts.getOrNull(nextIndex)
-                                            nextLayout?.let { layout ->
-                                                val s2 = s.copy(keyboardLayout = layout.ordinal)
-                                                settingsRepo.update(s2)
+                            Box(
+                                modifier =
+                                    Modifier.onSizeChanged { size ->
+                                        if (size.height != keyboardHeightPx) {
+                                            keyboardHeightPx = size.height
+                                        }
+                                    },
+                            ) {
+                                KeyboardScreen(
+                                    settings = keyboardSettings,
+                                    clipboardRepository = clipboardRepo,
+                                    onSwitchLanguage = {
+                                        ctx.lifecycleScope.launch {
+                                            val state = settingsState.value
+                                            state?.let { s ->
+                                                val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
+                                                val currentLayout = s.keyboardLayout
+                                                val index = layouts.map { it.ordinal }.indexOf(currentLayout)
+                                                val nextIndex = (index + 1).mod(layouts.size)
+                                                val nextLayout = layouts.getOrNull(nextIndex)
+                                                nextLayout?.let { layout ->
+                                                    val s2 = s.copy(keyboardLayout = layout.ordinal)
+                                                    settingsRepo.update(s2)
 
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.handleFinishInput(ctx)
-                                                ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.updateCursorPosition(ctx)
+                                                    ctx.currentKeyboardDefinition
+                                                        ?.settings
+                                                        ?.textProcessor
+                                                        ?.handleFinishInput(ctx)
+                                                    ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
+                                                    ctx.currentKeyboardDefinition
+                                                        ?.settings
+                                                        ?.textProcessor
+                                                        ?.updateCursorPosition(ctx)
 
-                                                if (s.showToastOnLayoutSwitch.toBool()) {
-                                                    Toast
-                                                        .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
-                                                        .show()
+                                                    if (s.showToastOnLayoutSwitch.toBool()) {
+                                                        Toast
+                                                            .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
+                                                            .show()
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                },
-                                onChangePosition = { f ->
-                                    ctx.lifecycleScope.launch {
-                                        settingsState.value?.let { state ->
-                                            val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
-                                            settingsRepo.update(state.copy(position = nextPosition))
+                                    },
+                                    onChangePosition = { f ->
+                                        ctx.lifecycleScope.launch {
+                                            settingsState.value?.let { state ->
+                                                val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
+                                                settingsRepo.update(state.copy(position = nextPosition))
+                                            }
                                         }
-                                    }
-                                },
-                                onToggleHideLetters = {
-                                    ctx.lifecycleScope.launch {
-                                        settingsState.value?.let { state ->
-                                            val hidden = (!state.hideLetters.toBool()).toInt()
-                                            settingsRepo.update(state.copy(hideLetters = hidden))
+                                    },
+                                    onToggleHideLetters = {
+                                        ctx.lifecycleScope.launch {
+                                            settingsState.value?.let { state ->
+                                                val hidden = (!state.hideLetters.toBool()).toInt()
+                                                settingsRepo.update(state.copy(hideLetters = hidden))
+                                            }
                                         }
-                                    }
-                                },
-                                onGoToClipboardSettings = {
-                                    val intent =
-                                        Intent(context, MainActivity::class.java).apply {
-                                            putExtra("startRoute", "clipboardSettings")
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                        }
-                                    context.startActivity(intent)
-                                },
-                            )
+                                    },
+                                    onGoToClipboardSettings = {
+                                        val intent =
+                                            Intent(context, MainActivity::class.java).apply {
+                                                putExtra("startRoute", "clipboardSettings")
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                            }
+                                        context.startActivity(intent)
+                                    },
+                                )
+                            }
                         }
                     }
                 }
