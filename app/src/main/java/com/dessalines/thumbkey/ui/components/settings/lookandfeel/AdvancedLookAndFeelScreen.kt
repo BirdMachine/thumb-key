@@ -21,13 +21,16 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -44,6 +47,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.KeyThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.KeyThemeState
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardBackdrop
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardGradientStop
+import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
@@ -54,6 +58,8 @@ import kotlin.math.roundToInt
 @Composable
 fun AdvancedLookAndFeelScreen(navController: NavController) {
     val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    var keywiEnabled by remember { mutableStateOf(KeywiAppearancePreferences.load(context)) }
 
     Scaffold(
         topBar = {
@@ -68,25 +74,70 @@ fun AdvancedLookAndFeelScreen(navController: NavController) {
                     .background(MaterialTheme.colorScheme.surface)
                     .imePadding(),
         ) {
-            SurfaceThemeSection(
-                title = "Main backdrop",
-                subtitle = "The large space behind and around the keys.",
-                load = BackdropThemePreferences::load,
-                save = BackdropThemePreferences::save,
-            )
-            SurfaceThemeSection(
-                title = "Suggestion toolbar",
-                subtitle = "The strip behind suggestion lozenges and the ✨ toggle.",
-                load = ToolbarThemePreferences::load,
-                save = ToolbarThemePreferences::save,
-            )
-            KeyAppearanceSection()
-            FontAndSuggestionSection()
-            Text(
-                text = "Planned surface slot: one-shot key-press overlays (GIF/image effects).",
-                modifier = Modifier.padding(16.dp),
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                    Text(
+                        "Enable custom keyboard backgrounds",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        "Turn off to use Thumb-Key's original styling.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                Switch(
+                    checked = keywiEnabled,
+                    onCheckedChange = { enabled ->
+                        keywiEnabled = enabled
+                        KeywiAppearancePreferences.save(context, enabled)
+                    },
+                )
+            }
+
+            if (keywiEnabled) {
+                SurfaceThemeSection(
+                    title = "Main backdrop",
+                    subtitle = "The large space behind and around the keys.",
+                    load = BackdropThemePreferences::load,
+                    save = BackdropThemePreferences::save,
+                )
+                SurfaceThemeSection(
+                    title = "Suggestion toolbar",
+                    subtitle = "The strip behind suggestion lozenges and the ✨ toggle.",
+                    load = ToolbarThemePreferences::load,
+                    save = ToolbarThemePreferences::save,
+                )
+                KeyAppearanceSection()
+                FontAndSuggestionSection()
+                Text(
+                    text = "Planned surface slot: one-shot key-press overlays (GIF/image effects).",
+                    modifier = Modifier.padding(16.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .alpha(0.42f)
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text("Main backdrop", style = MaterialTheme.typography.titleLarge)
+                    Text("Suggestion toolbar", style = MaterialTheme.typography.titleLarge)
+                    Text("Keys", style = MaterialTheme.typography.titleLarge)
+                    Text("Typography", style = MaterialTheme.typography.titleLarge)
+                    Text("Suggestions", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "Enable custom keyboard backgrounds to edit Keywi appearance settings.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
         }
     }
 }
