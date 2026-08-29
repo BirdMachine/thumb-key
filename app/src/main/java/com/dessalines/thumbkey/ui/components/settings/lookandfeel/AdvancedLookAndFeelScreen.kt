@@ -224,7 +224,9 @@ private fun KeyAppearanceSection() {
                 }
             }
 
-            KeySurfaceStyle.NONE -> Text("Transparent key faces.")
+            KeySurfaceStyle.NONE -> {
+                Text("Transparent key faces.")
+            }
         }
 
         Text("Key border", style = MaterialTheme.typography.titleMedium)
@@ -264,7 +266,9 @@ private fun KeyAppearanceSection() {
                 )
             }
 
-            KeyBorderStyle.NONE -> Text("No key border.")
+            KeyBorderStyle.NONE -> {
+                Text("No key border.")
+            }
         }
     }
 }
