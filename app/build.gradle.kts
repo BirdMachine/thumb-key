@@ -24,11 +24,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.birdmachine.keywi"
+        applicationId = "com.birdmachine.fishwi"
         minSdk = 24
         targetSdk = 36
         versionCode = keywiCiVersionCode ?: 186
-        versionName = "5.1.16-keywi.1"
+        versionName = "5.1.16-fishwi.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
