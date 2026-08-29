@@ -1,0 +1,26 @@
+name: Keywi border lozenge patch
+on:
+  push:
+    branches: [birdie/gradient-backgrounds]
+    paths: [.github/workflows/keywi-border-lozenge-patch.yml]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: python scripts/keywi-border-lozenge-patch.py
+      - run: ./gradlew formatKotlin
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java
+          git commit -m "Add managed key-border and toolbar-lozenge gradients"
+          git push origin HEAD:birdie/gradient-backgrounds
