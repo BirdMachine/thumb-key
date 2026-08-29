@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -68,108 +69,110 @@ class ComposeKeyboardView(
 
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 MaterialTheme(colorScheme = keyboardColorScheme) {
-                    Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
-                        if (backdropEnabled && toolbarBackdrop.mode != BackdropMode.NONE) {
-                            BackdropVisualLayer(
-                                state = toolbarBackdrop,
-                                modifier = Modifier.fillMaxWidth().height(42.dp),
-                            )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+                            if (backdropEnabled && toolbarBackdrop.mode != BackdropMode.NONE) {
+                                BackdropVisualLayer(
+                                    state = toolbarBackdrop,
+                                    modifier = Modifier.fillMaxWidth().height(42.dp),
+                                )
+                            }
+                            SuggestionBarV2(ctx)
                         }
-                        SuggestionBarV2(ctx)
-                    }
 
-                    Box(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .onSizeChanged { size ->
-                                    if (size.height != keyboardHeightPx) {
-                                        keyboardHeightPx = size.height
-                                    }
-                                },
-                    ) {
-                        if (
-                            backdropEnabled &&
-                            keyboardHeightPx > 0 &&
-                            mainBackdrop.mode != BackdropMode.COLORFUL &&
-                            mainBackdrop.mode != BackdropMode.NONE
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .onSizeChanged { size ->
+                                        if (size.height != keyboardHeightPx) {
+                                            keyboardHeightPx = size.height
+                                        }
+                                    },
                         ) {
-                            BackdropVisualLayer(
-                                state = mainBackdrop,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(with(density) { keyboardHeightPx.toDp() }),
-                            )
-                        }
-
-                        val keyboardSettings =
-                            if (mainBackdrop.mode == BackdropMode.COLORFUL) {
-                                settings
-                            } else {
-                                settings?.copy(backdropEnabled = 0)
+                            if (
+                                backdropEnabled &&
+                                keyboardHeightPx > 0 &&
+                                mainBackdrop.mode != BackdropMode.COLORFUL &&
+                                mainBackdrop.mode != BackdropMode.NONE
+                            ) {
+                                BackdropVisualLayer(
+                                    state = mainBackdrop,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .height(with(density) { keyboardHeightPx.toDp() }),
+                                )
                             }
 
-                        KeyboardScreen(
-                            settings = keyboardSettings,
-                            clipboardRepository = clipboardRepo,
-                            onSwitchLanguage = {
-                                ctx.lifecycleScope.launch {
-                                    val state = settingsState.value
-                                    state?.let { s ->
-                                        val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
-                                        val currentLayout = s.keyboardLayout
-                                        val index = layouts.map { it.ordinal }.indexOf(currentLayout)
-                                        val nextIndex = (index + 1).mod(layouts.size)
-                                        val nextLayout = layouts.getOrNull(nextIndex)
-                                        nextLayout?.let { layout ->
-                                            val s2 = s.copy(keyboardLayout = layout.ordinal)
-                                            settingsRepo.update(s2)
+                            val keyboardSettings =
+                                if (mainBackdrop.mode == BackdropMode.COLORFUL) {
+                                    settings
+                                } else {
+                                    settings?.copy(backdropEnabled = 0)
+                                }
 
-                                            ctx.currentKeyboardDefinition
-                                                ?.settings
-                                                ?.textProcessor
-                                                ?.handleFinishInput(ctx)
-                                            ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
-                                            ctx.currentKeyboardDefinition
-                                                ?.settings
-                                                ?.textProcessor
-                                                ?.updateCursorPosition(ctx)
+                            KeyboardScreen(
+                                settings = keyboardSettings,
+                                clipboardRepository = clipboardRepo,
+                                onSwitchLanguage = {
+                                    ctx.lifecycleScope.launch {
+                                        val state = settingsState.value
+                                        state?.let { s ->
+                                            val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
+                                            val currentLayout = s.keyboardLayout
+                                            val index = layouts.map { it.ordinal }.indexOf(currentLayout)
+                                            val nextIndex = (index + 1).mod(layouts.size)
+                                            val nextLayout = layouts.getOrNull(nextIndex)
+                                            nextLayout?.let { layout ->
+                                                val s2 = s.copy(keyboardLayout = layout.ordinal)
+                                                settingsRepo.update(s2)
 
-                                            if (s.showToastOnLayoutSwitch.toBool()) {
-                                                Toast
-                                                    .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
-                                                    .show()
+                                                ctx.currentKeyboardDefinition
+                                                    ?.settings
+                                                    ?.textProcessor
+                                                    ?.handleFinishInput(ctx)
+                                                ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
+                                                ctx.currentKeyboardDefinition
+                                                    ?.settings
+                                                    ?.textProcessor
+                                                    ?.updateCursorPosition(ctx)
+
+                                                if (s.showToastOnLayoutSwitch.toBool()) {
+                                                    Toast
+                                                        .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
+                                                        .show()
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            },
-                            onChangePosition = { f ->
-                                ctx.lifecycleScope.launch {
-                                    settingsState.value?.let { state ->
-                                        val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
-                                        settingsRepo.update(state.copy(position = nextPosition))
+                                },
+                                onChangePosition = { f ->
+                                    ctx.lifecycleScope.launch {
+                                        settingsState.value?.let { state ->
+                                            val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
+                                            settingsRepo.update(state.copy(position = nextPosition))
+                                        }
                                     }
-                                }
-                            },
-                            onToggleHideLetters = {
-                                ctx.lifecycleScope.launch {
-                                    settingsState.value?.let { state ->
-                                        val hidden = (!state.hideLetters.toBool()).toInt()
-                                        settingsRepo.update(state.copy(hideLetters = hidden))
+                                },
+                                onToggleHideLetters = {
+                                    ctx.lifecycleScope.launch {
+                                        settingsState.value?.let { state ->
+                                            val hidden = (!state.hideLetters.toBool()).toInt()
+                                            settingsRepo.update(state.copy(hideLetters = hidden))
+                                        }
                                     }
-                                }
-                            },
-                            onGoToClipboardSettings = {
-                                val intent =
-                                    Intent(context, MainActivity::class.java).apply {
-                                        putExtra("startRoute", "clipboardSettings")
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                    }
-                                context.startActivity(intent)
-                            },
-                        )
+                                },
+                                onGoToClipboardSettings = {
+                                    val intent =
+                                        Intent(context, MainActivity::class.java).apply {
+                                            putExtra("startRoute", "clipboardSettings")
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                        }
+                                    context.startActivity(intent)
+                                },
+                            )
+                        }
                     }
                 }
             }
