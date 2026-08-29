@@ -55,7 +55,6 @@ private const val MOTION_PREFS = "suggestion_motion_preferences"
 private const val MOTION_STYLE = "motion_style"
 private const val MAX_VISIBLE_SUGGESTIONS = 5
 private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
-private val MATRIX_WORD_GREEN = Color(0xFF52FF52)
 
 enum class SuggestionMotionStyle {
     NONE,
@@ -270,7 +269,7 @@ private fun SuggestionLozengeSlot(
                     shadowElevation = if (isBest) 2.dp else 1.dp,
                     border =
                         if (isCurrentWord) {
-                            BorderStroke(1.dp, MATRIX_WORD_GREEN)
+                            BorderStroke(1.dp, newWordHighlightColor)
                         } else {
                             when (theme.borderStyle) {
                                 SuggestionLozengeBorderStyle.SOLID -> {
@@ -318,7 +317,7 @@ private fun SuggestionLozengeSlot(
                         overflow = TextOverflow.Ellipsis,
                         color =
                             if (isCurrentWord) {
-                                MATRIX_WORD_GREEN
+                                newWordHighlightColor
                             } else {
                                 MaterialTheme.colorScheme.onSurface.copy(
                                     alpha = if (isBest) 1f else 0.88f,
@@ -342,6 +341,7 @@ fun SuggestionBarV2(ime: IMEService) {
     var longPressAddWord by remember { mutableStateOf(AdvancedKeyWordPreferences.longPressAddWord(ime)) }
     val motionStyle = remember { SuggestionMotionPreferences.load(ime) }
     val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)
+    var newWordHighlightColor by remember { mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(ime)) }
 
     val inputType = ime.currentInputEditorInfo?.inputType ?: 0
     val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -354,6 +354,7 @@ fun SuggestionBarV2(ime: IMEService) {
         while (enabled && !privateField) {
             showCurrentWord = AdvancedKeyWordPreferences.showCurrentWord(ime)
             longPressAddWord = AdvancedKeyWordPreferences.longPressAddWord(ime)
+            newWordHighlightColor = AdvancedKeyWordPreferences.newWordHighlightColor(ime)
             val beforeCursor =
                 ime.currentInputConnection
                     ?.getTextBeforeCursor(64, 0)

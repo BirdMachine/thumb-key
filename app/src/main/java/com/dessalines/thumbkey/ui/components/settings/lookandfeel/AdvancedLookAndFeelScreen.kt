@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
+import com.dessalines.thumbkey.ui.components.keyboard.AdvancedKeyWordPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropPreset
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemeState
@@ -583,6 +584,9 @@ private fun FontAndSuggestionSection() {
     val context = LocalContext.current
     var fontName by remember { mutableStateOf(FontPreferences.displayName(context)) }
     var motion by remember { mutableStateOf(SuggestionMotionPreferences.load(context)) }
+    var newWordHighlightColor by remember {
+        mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(context))
+    }
     val fontPicker =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null && FontPreferences.importFont(context, uri)) {
@@ -622,6 +626,18 @@ private fun FontAndSuggestionSection() {
         }
 
         Text("Suggestions", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "New Word Highlight color",
+            style = MaterialTheme.typography.titleSmall,
+        )
+        Text(
+            "Used for the unfinished/current-word chip. Matrix green is the default.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        ColorEditor("New Word Highlight", newWordHighlightColor) { color ->
+            newWordHighlightColor = color
+            AdvancedKeyWordPreferences.setNewWordHighlightColor(context, color)
+        }
         Text("Motion style", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = SuggestionMotionStyle.entries,
