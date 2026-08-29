@@ -27,15 +27,16 @@ object KeyThemePreferences {
 
     fun load(context: Context): KeyThemeState {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val defaults = KeyThemeState()
         current =
             KeyThemeState(
                 surfaceStyle = enumValue(prefs.getString("surface_style", null), KeySurfaceStyle.GRADIENT),
                 surfaceGradient = readGradient(prefs, "surface", BIRDIE_KEY_GRADIENT),
-                surfaceColor = Color(prefs.getLong("surface_color", 0xFF242631L).toULong()),
+                surfaceColor = readColor(prefs, "surface_color", defaults.surfaceColor),
                 borderStyle = enumValue(prefs.getString("border_style", null), KeyBorderStyle.GRADIENT),
                 borderGradient = readGradient(prefs, "border", BIRDIE_GOLD_BORDER),
-                borderColor = Color(prefs.getLong("border_color", 0xFFFFD86BL).toULong()),
-                shadowColor = Color(prefs.getLong("shadow_color", 0xFF000000L).toULong()),
+                borderColor = readColor(prefs, "border_color", defaults.borderColor),
+                shadowColor = readColor(prefs, "shadow_color", defaults.shadowColor),
                 shadowAlpha = prefs.getFloat("shadow_alpha", 0.55f),
                 shadowElevation = prefs.getFloat("shadow_elevation", 4f),
             )
@@ -62,6 +63,15 @@ object KeyThemePreferences {
                 putFloat("shadow_elevation", state.shadowElevation)
             }.apply()
     }
+
+    private fun readColor(
+        prefs: android.content.SharedPreferences,
+        key: String,
+        fallback: Color,
+    ): Color =
+        runCatching {
+            Color(prefs.getLong(key, fallback.value.toLong()).toULong())
+        }.getOrDefault(fallback)
 
     private fun readGradient(
         prefs: android.content.SharedPreferences,
