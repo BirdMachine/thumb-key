@@ -31,6 +31,7 @@ import com.dessalines.thumbkey.ui.components.settings.behavior.BehaviorScreen
 import com.dessalines.thumbkey.ui.components.settings.clipboard.ClipboardSettingsScreen
 import com.dessalines.thumbkey.ui.components.settings.lookandfeel.AdvancedLookAndFeelScreen
 import com.dessalines.thumbkey.ui.components.settings.lookandfeel.LookAndFeelScreen
+import com.dessalines.thumbkey.ui.components.settings.modifykeys.AdvancedKeyWordSelectionScreen
 import com.dessalines.thumbkey.ui.components.settings.modifykeys.ModifyKeysScreen
 import com.dessalines.thumbkey.ui.components.settings.other.OtherSettingsScreen
 import com.dessalines.thumbkey.ui.components.setup.SetupScreen
@@ -150,6 +151,12 @@ class MainActivity : AppCompatActivity() {
                     }
                     composable(route = "advancedLookAndFeel") {
                         AdvancedLookAndFeelScreen(navController = navController)
+                    }
+                    composable(route = "advancedKeyWordSelection") {
+                        AdvancedKeyWordSelectionScreen(
+                            navController = navController,
+                            appSettingsViewModel = appSettingsViewModel,
+                        )
                     }
                     composable(route = "behavior") {
                         BehaviorScreen(
