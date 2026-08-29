@@ -37,6 +37,13 @@ object GradientLibrary {
                 stops = BackdropThemePreferences.stateForPreset(BackdropPreset.SINEBOW).stops,
                 builtIn = true,
             ),
+            SavedGradient(
+                id = "builtin_birdie_gold_border",
+                name = "Birdie Gold Border",
+                angleDegrees = BIRDIE_GOLD_BORDER.angleDegrees,
+                stops = BIRDIE_GOLD_BORDER.stops,
+                builtIn = true,
+            ),
         )
 
     fun load(context: Context): List<SavedGradient> {
