@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -34,9 +36,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropPreset
@@ -61,6 +65,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreference
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.keyboardGradientBackground
 import com.dessalines.thumbkey.utils.SimpleTopAppBar
 import kotlin.math.roundToInt
 
@@ -85,14 +90,14 @@ fun AdvancedLookAndFeelScreen(navController: NavController) {
                     .imePadding(),
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                     Text(
                         "Enable custom keyboard backgrounds",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                     )
                     Text(
                         "Turn off to use Thumb-Key's original styling.",
@@ -141,9 +146,9 @@ fun AdvancedLookAndFeelScreen(navController: NavController) {
                 ) {
                     Text("Main backdrop", style = MaterialTheme.typography.titleLarge)
                     Text("Suggestion toolbar", style = MaterialTheme.typography.titleLarge)
-                    Text("Keys", style = MaterialTheme.typography.titleLarge)
-                    Text("Typography", style = MaterialTheme.typography.titleLarge)
-                    Text("Suggestions", style = MaterialTheme.typography.titleLarge)
+                    Text("Keys", style = MaterialTheme.typography.titleSmall)
+                    Text("Typography", style = MaterialTheme.typography.titleSmall)
+                    Text("Suggestions", style = MaterialTheme.typography.titleSmall)
                     Text(
                         "Enable custom keyboard backgrounds to edit Keywi appearance settings.",
                         style = MaterialTheme.typography.bodySmall,
@@ -185,10 +190,10 @@ private fun SurfaceThemeSection(
         }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
+        Text(title, style = MaterialTheme.typography.titleSmall)
         Text(subtitle, style = MaterialTheme.typography.bodySmall)
         if (showToolbarBorder) {
             var borderWidth by remember { mutableStateOf(ToolbarBorderPreferences.loadWidth(context)) }
@@ -248,92 +253,18 @@ private fun SurfaceThemeSection(
         }
 
         if (state.mode == BackdropMode.COLORFUL) {
-            var gradients by remember { mutableStateOf(GradientLibrary.load(context)) }
-            var menuOpen by remember { mutableStateOf(false) }
-            var selectedName by remember { mutableStateOf("Current gradient") }
-            var saveName by remember { mutableStateOf("") }
-
-            Text("Saved gradient", style = MaterialTheme.typography.titleMedium)
-            Box {
-                Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("$selectedName  ▾")
-                }
-                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                    gradients.forEach { saved ->
-                        DropdownMenuItem(
-                            text = { Text(saved.name) },
-                            onClick = {
-                                selectedName = saved.name
-                                menuOpen = false
-                                persist(
-                                    state.copy(
-                                        preset = BackdropPreset.CUSTOM,
-                                        angleDegrees = saved.angleDegrees,
-                                        stops = saved.stops,
-                                    ),
-                                )
-                            },
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("＋ New gradient") },
-                        onClick = {
-                            selectedName = "New gradient"
-                            menuOpen = false
-                            persist(
-                                state.copy(
-                                    preset = BackdropPreset.CUSTOM,
-                                    angleDegrees = 0f,
-                                    stops =
-                                        listOf(
-                                            KeyboardGradientStop(0f, Color(0xFF151A2C)),
-                                            KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
-                                        ),
-                                ),
-                            )
-                        },
+            ManagedGradientEditor(
+                title = "Gradient",
+                gradient = state.toBackdrop(),
+                onGradientChange = { gradient ->
+                    persist(
+                        state.copy(
+                            preset = BackdropPreset.CUSTOM,
+                            angleDegrees = gradient.angleDegrees,
+                            stops = gradient.stops,
+                        ),
                     )
-                }
-            }
-            GradientEditor("Gradient", state.toBackdrop()) { gradient ->
-                persist(
-                    state.copy(
-                        preset = BackdropPreset.CUSTOM,
-                        angleDegrees = gradient.angleDegrees,
-                        stops = gradient.stops,
-                    ),
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = saveName,
-                    onValueChange = { saveName = it },
-                    label = { Text("Gradient name") },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-                Button(
-                    enabled = saveName.isNotBlank(),
-                    onClick = {
-                        val saved =
-                            GradientLibrary.saveCustom(
-                                context,
-                                SavedGradient(
-                                    id = "",
-                                    name = saveName.trim(),
-                                    angleDegrees = state.angleDegrees,
-                                    stops = state.stops,
-                                ),
-                            )
-                        selectedName = saved.name
-                        saveName = ""
-                        gradients = GradientLibrary.load(context)
-                    },
-                ) { Text("Save") }
-            }
-            Text(
-                "Saved gradients use portable Keywi JSON; import/export controls are the next library action.",
-                style = MaterialTheme.typography.bodySmall,
+                },
             )
         }
     }
@@ -350,73 +281,114 @@ private fun ManagedGradientEditor(
     var menuOpen by remember { mutableStateOf(false) }
     var selectedName by remember { mutableStateOf("Current gradient") }
     var saveName by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
 
-    Text("Saved gradient", style = MaterialTheme.typography.titleMedium)
-    Box {
-        Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("$selectedName  ▾")
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, style = MaterialTheme.typography.titleSmall)
+            Text(
+                text = if (expanded) "Hide details  ▲" else "Edit gradient  ▼",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.clickable { expanded = !expanded }.padding(6.dp),
+            )
         }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            gradients.forEach { saved ->
+
+        Box {
+            Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(selectedName, fontSize = 13.sp)
+            }
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                gradients.forEach { saved ->
+                    DropdownMenuItem(
+                        text = { Text(saved.name) },
+                        onClick = {
+                            selectedName = saved.name
+                            menuOpen = false
+                            onGradientChange(saved.toBackdrop())
+                        },
+                    )
+                }
                 DropdownMenuItem(
-                    text = { Text(saved.name) },
+                    text = { Text("＋ New gradient") },
                     onClick = {
-                        selectedName = saved.name
+                        selectedName = "New gradient"
                         menuOpen = false
-                        onGradientChange(saved.toBackdrop())
+                        expanded = true
+                        onGradientChange(
+                            KeyboardBackdrop(
+                                angleDegrees = 0f,
+                                stops =
+                                    listOf(
+                                        KeyboardGradientStop(0f, Color(0xFF151A2C)),
+                                        KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
+                                    ),
+                            ),
+                        )
                     },
                 )
             }
-            DropdownMenuItem(
-                text = { Text("＋ New gradient") },
-                onClick = {
-                    selectedName = "New gradient"
-                    menuOpen = false
-                    onGradientChange(
-                        KeyboardBackdrop(
-                            angleDegrees = 0f,
-                            stops =
-                                listOf(
-                                    KeyboardGradientStop(0f, Color(0xFF151A2C)),
-                                    KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
-                                ),
-                        ),
-                    )
-                },
-            )
         }
-    }
-    GradientEditor(title, gradient, onGradientChange)
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        OutlinedTextField(
-            value = saveName,
-            onValueChange = { saveName = it },
-            label = { Text("Gradient name") },
-            singleLine = true,
-            modifier = Modifier.weight(1f),
+
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .keyboardGradientBackground(gradient),
         )
-        Button(
-            enabled = saveName.isNotBlank(),
-            onClick = {
-                val saved =
-                    GradientLibrary.saveCustom(
-                        context,
-                        SavedGradient(
-                            id = "",
-                            name = saveName.trim(),
-                            angleDegrees = gradient.angleDegrees,
-                            stops = gradient.stops,
-                        ),
+
+        if (expanded) {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.22f),
+                            RoundedCornerShape(12.dp),
+                        ).padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                GradientEditor(title, gradient, onGradientChange)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = saveName,
+                        onValueChange = { saveName = it },
+                        label = { Text("Save as") },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f),
                     )
-                selectedName = saved.name
-                saveName = ""
-                gradients = GradientLibrary.load(context)
-            },
-        ) {
-            Text("Save")
+                    Button(
+                        enabled = saveName.isNotBlank(),
+                        onClick = {
+                            val saved =
+                                GradientLibrary.saveCustom(
+                                    context,
+                                    SavedGradient(
+                                        id = "",
+                                        name = saveName.trim(),
+                                        angleDegrees = gradient.angleDegrees,
+                                        stops = gradient.stops,
+                                    ),
+                                )
+                            selectedName = saved.name
+                            saveName = ""
+                            gradients = GradientLibrary.load(context)
+                        },
+                    ) {
+                        Text("Save", fontSize = 12.sp)
+                    }
+                }
+            }
         }
     }
 }
@@ -432,15 +404,15 @@ private fun SuggestionLozengeAppearanceSection() {
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("Toolbar lozenges", style = MaterialTheme.typography.titleLarge)
+        Text("Toolbar lozenges", style = MaterialTheme.typography.titleSmall)
         Text(
             "Suggestion pills and the ✨ toggle get their own surface and border theme.",
             style = MaterialTheme.typography.bodySmall,
         )
-        Text("Lozenge background", style = MaterialTheme.typography.titleMedium)
+        Text("Lozenge background", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = SuggestionLozengeSurfaceStyle.entries,
             selected = state.surfaceStyle,
@@ -468,7 +440,7 @@ private fun SuggestionLozengeAppearanceSection() {
             }
         }
 
-        Text("Lozenge border", style = MaterialTheme.typography.titleMedium)
+        Text("Lozenge border", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = SuggestionLozengeBorderStyle.entries,
             selected = state.borderStyle,
@@ -515,11 +487,11 @@ private fun KeyAppearanceSection() {
     }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("Keys", style = MaterialTheme.typography.titleLarge)
-        Text("Key surface", style = MaterialTheme.typography.titleMedium)
+        Text("Keys", style = MaterialTheme.typography.titleSmall)
+        Text("Key surface", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = KeySurfaceStyle.entries,
             selected = state.surfaceStyle,
@@ -543,7 +515,7 @@ private fun KeyAppearanceSection() {
             }
         }
 
-        Text("Key border", style = MaterialTheme.typography.titleMedium)
+        Text("Key border", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = KeyBorderStyle.entries,
             selected = state.borderStyle,
@@ -602,10 +574,10 @@ private fun FontAndSuggestionSection() {
         }
 
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 7.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text("Typography", style = MaterialTheme.typography.titleLarge)
+        Text("Typography", style = MaterialTheme.typography.titleSmall)
         Text(fontName)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
@@ -632,8 +604,8 @@ private fun FontAndSuggestionSection() {
             }
         }
 
-        Text("Suggestions", style = MaterialTheme.typography.titleLarge)
-        Text("Motion style", style = MaterialTheme.typography.titleMedium)
+        Text("Suggestions", style = MaterialTheme.typography.titleSmall)
+        Text("Motion style", style = MaterialTheme.typography.titleSmall)
         ChipRow(
             values = SuggestionMotionStyle.entries,
             selected = motion,
@@ -669,25 +641,37 @@ private fun GradientEditor(
     gradient: KeyboardBackdrop,
     onChange: (KeyboardBackdrop) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Text("$label angle: ${gradient.angleDegrees.roundToInt()}°")
+    var stopsExpanded by remember { mutableStateOf(false) }
+    Text(
+        "$label angle • ${gradient.angleDegrees.roundToInt()}°",
+        style = MaterialTheme.typography.labelMedium,
+    )
     Slider(
         value = gradient.angleDegrees,
         onValueChange = { onChange(gradient.copy(angleDegrees = it)) },
         valueRange = 0f..360f,
     )
-    Button(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { expanded = !expanded },
-    ) {
-        Text("Color stops (${gradient.stops.size}) ${if (expanded) "▲" else "▼"}")
-    }
-    if (expanded) {
+    Text(
+        text = "${gradient.stops.size} color stops  ${if (stopsExpanded) "▲" else "▼"}",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.clickable { stopsExpanded = !stopsExpanded }.padding(vertical = 4.dp),
+    )
+    if (stopsExpanded) {
         gradient.stops.forEachIndexed { index, stop ->
             Column(
-                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(8.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
+                        RoundedCornerShape(10.dp),
+                    ).padding(7.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text("Stop ${index + 1} • ${(stop.position * 100).roundToInt()}%")
+                Text(
+                    "Stop ${index + 1} • ${(stop.position * 100).roundToInt()}%",
+                    style = MaterialTheme.typography.labelSmall,
+                )
                 Slider(
                     value = stop.position,
                     onValueChange = { position ->
@@ -719,7 +703,7 @@ private fun GradientEditor(
                 )
             },
         ) {
-            Text("Add color stop")
+            Text("＋ Add stop", fontSize = 12.sp)
         }
     }
 }
@@ -730,10 +714,10 @@ private fun ColorEditor(
     color: Color,
     onChange: (Color) -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(Modifier.size(28.dp).background(color))
-            Text("$label • A ${(color.alpha * 100).roundToInt()}%")
+            Box(Modifier.size(22.dp).clip(RoundedCornerShape(7.dp)).background(color))
+            Text("$label • A ${(color.alpha * 100).roundToInt()}%", style = MaterialTheme.typography.labelMedium)
         }
         Channel("R", color.red) { onChange(Color(it, color.green, color.blue, color.alpha)) }
         Channel("G", color.green) { onChange(Color(color.red, it, color.blue, color.alpha)) }
@@ -748,7 +732,7 @@ private fun Channel(
     value: Float,
     onChange: (Float) -> Unit,
 ) {
-    Text("$label ${(value * 255).roundToInt()}")
+    Text("$label ${(value * 255).roundToInt()}", style = MaterialTheme.typography.labelSmall)
     Slider(
         value = value,
         onValueChange = onChange,
