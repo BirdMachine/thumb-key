@@ -1,10 +1,8 @@
 package com.dessalines.thumbkey.ui.components.settings.modifykeys
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -70,7 +68,10 @@ fun AdvancedKeyWordSelectionScreen(
     val settings by appSettingsViewModel.appSettings.observeAsState()
     val context = androidx.compose.ui.platform.LocalContext.current
     val scrollState = rememberScrollState()
-    val layout = KeyboardLayout.entries.getOrElse(settings?.keyboardLayout ?: DEFAULT_KEYBOARD_LAYOUT) { KeyboardLayout.entries.first() }
+    val layout =
+        KeyboardLayout.entries.getOrElse(settings?.keyboardLayout ?: DEFAULT_KEYBOARD_LAYOUT) {
+            KeyboardLayout.entries.first()
+        }
     val yaml = settings?.keyModifications ?: DEFAULT_KEY_MODIFICATIONS
     var selectedMode by remember { mutableStateOf(KeyboardMode.MAIN) }
     var selectedRow by remember { mutableIntStateOf(0) }
@@ -169,7 +170,7 @@ fun AdvancedKeyWordSelectionScreen(
                 ) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "EDIT key${selectedRow}_${selectedCol}",
+                            "EDIT key${selectedRow}_$selectedCol",
                             color = MATRIX_GREEN,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
@@ -250,7 +251,7 @@ fun AdvancedKeyWordSelectionScreen(
                         },
                     )
                     Text(
-                        "Long-press uses Android's user dictionary provider; Android exposes it specifically to IMEs and spellcheckers on modern versions.",
+                        "Long-press uses Android's user dictionary provider from the keyboard itself.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -407,23 +408,50 @@ private fun RemapEditorGrid(
 private fun keyLabel(key: KeyC?): String {
     if (key == null) return ""
     return when (val display = key.display) {
-        is KeyDisplay.TextDisplay -> display.text
-        is KeyDisplay.IconDisplay -> "◈"
-        null ->
+        is KeyDisplay.TextDisplay -> {
+            display.text
+        }
+
+        is KeyDisplay.IconDisplay -> {
+            "◈"
+        }
+
+        null -> {
             when (val action = key.action) {
                 is KeyAction.CommitText -> action.text
                 else -> action::class.simpleName?.take(3).orEmpty()
             }
+        }
     }
 }
 
 private fun com.dessalines.thumbkey.utils.KeyboardDefinition.keyboardForMode(mode: KeyboardMode): KeyboardC? =
     when (mode) {
-        KeyboardMode.MAIN -> modes.main
-        KeyboardMode.SHIFTED -> modes.shifted
-        KeyboardMode.NUMERIC -> modes.numeric
-        KeyboardMode.CTRLED -> modes.ctrled
-        KeyboardMode.ALTED -> modes.alted
-        KeyboardMode.EMOJI -> modes.emoji
-        KeyboardMode.CLIPBOARD -> null
+        KeyboardMode.MAIN -> {
+            modes.main
+        }
+
+        KeyboardMode.SHIFTED -> {
+            modes.shifted
+        }
+
+        KeyboardMode.NUMERIC -> {
+            modes.numeric
+        }
+
+        KeyboardMode.CTRLED -> {
+            modes.ctrled
+        }
+
+        KeyboardMode.ALTED -> {
+            modes.alted
+        }
+
+        KeyboardMode.EMOJI -> {
+            modes.emoji
+        }
+
+        KeyboardMode.CLIPBOARD -> {
+            null
+        }
     }
