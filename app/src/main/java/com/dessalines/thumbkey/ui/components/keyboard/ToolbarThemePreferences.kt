@@ -134,3 +134,25 @@ object ToolbarBorderPreferences {
             .apply()
     }
 }
+
+object ToolbarLayoutPreferences {
+    private const val PREFS_NAME = "birdie_toolbar_layout"
+    private const val KEY_TO_KEYBOARD_GAP = "toolbar_to_keyboard_gap_dp"
+
+    fun loadKeyboardGap(context: Context): Float =
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getFloat(KEY_TO_KEYBOARD_GAP, 0f)
+            .coerceIn(0f, 24f)
+
+    fun saveKeyboardGap(
+        context: Context,
+        value: Float,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putFloat(KEY_TO_KEYBOARD_GAP, value.coerceIn(0f, 24f))
+            .apply()
+    }
+}
