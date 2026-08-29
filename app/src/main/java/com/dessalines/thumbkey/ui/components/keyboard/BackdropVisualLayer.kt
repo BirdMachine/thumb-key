@@ -11,8 +11,10 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 
@@ -51,26 +53,44 @@ fun BackdropVisualLayer(
         -> {
             val context = LocalContext.current
             val uri = state.mediaUri?.let(Uri::parse)
+            val decodedDrawable =
+                remember(context, state.mediaUri) {
+                    if (uri != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        runCatching { decodeModernBackdrop(context, uri) }.getOrNull()
+                    } else {
+                        null
+                    }
+                }
+
             AndroidView(
-                modifier = modifier.fillMaxSize().alpha(state.opacity),
+                modifier =
+                    modifier
+                        .fillMaxSize()
+                        .clipToBounds()
+                        .alpha(state.opacity),
                 factory = { ctx ->
                     ImageView(ctx).apply {
                         scaleType = ImageView.ScaleType.CENTER_CROP
                     }
                 },
                 update = { imageView ->
-                    if (uri == null) {
-                        imageView.setImageDrawable(null)
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        runCatching {
-                            decodeModernBackdrop(context, uri)
-                        }.onSuccess { drawable ->
-                            imageView.setImageDrawable(drawable)
-                        }.onFailure {
-                            imageView.setImageURI(uri)
+                    when {
+                        uri == null -> {
+                            imageView.tag = null
+                            imageView.setImageDrawable(null)
                         }
-                    } else {
-                        imageView.setImageURI(uri)
+
+                        decodedDrawable != null -> {
+                            if (imageView.drawable !== decodedDrawable) {
+                                imageView.setImageDrawable(decodedDrawable)
+                            }
+                            imageView.tag = state.mediaUri
+                        }
+
+                        imageView.tag != state.mediaUri -> {
+                            imageView.setImageURI(uri)
+                            imageView.tag = state.mediaUri
+                        }
                     }
                 },
             )
