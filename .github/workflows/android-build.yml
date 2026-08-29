@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "birdie/**"
+      - "fishwi"
 
 concurrency:
   group: keywi-ci-${{ github.ref }}
