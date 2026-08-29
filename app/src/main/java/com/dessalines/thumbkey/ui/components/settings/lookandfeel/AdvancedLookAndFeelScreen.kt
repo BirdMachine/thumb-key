@@ -64,6 +64,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.SuggestionLozengeThemeStat
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
+import com.dessalines.thumbkey.ui.components.keyboard.ToolbarLayoutPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.keyboardGradientBackground
 import com.dessalines.thumbkey.utils.SimpleTopAppBar
@@ -197,6 +198,7 @@ private fun SurfaceThemeSection(
         Text(subtitle, style = MaterialTheme.typography.bodySmall)
         if (showToolbarBorder) {
             var borderWidth by remember { mutableStateOf(ToolbarBorderPreferences.loadWidth(context)) }
+            var toolbarGap by remember { mutableStateOf(ToolbarLayoutPreferences.loadKeyboardGap(context)) }
             var borderColorText by remember {
                 mutableStateOf(String.format("#%08X", ToolbarBorderPreferences.loadColor(context).value.toLong()))
             }
@@ -220,6 +222,18 @@ private fun SurfaceThemeSection(
                 label = { Text("Border color (#AARRGGBB or #RRGGBB)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                "Toolbar → keys gap: ${String.format("%.1f", toolbarGap)} dp",
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Slider(
+                value = toolbarGap,
+                onValueChange = { value ->
+                    toolbarGap = value
+                    ToolbarLayoutPreferences.saveKeyboardGap(context, value)
+                },
+                valueRange = 0f..24f,
             )
         }
         ChipRow(
@@ -354,7 +368,10 @@ private fun ManagedGradientEditor(
                         ).padding(10.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                GradientEditor(title, gradient, onGradientChange)
+                GradientEditor(title, gradient) { edited ->
+                    selectedName = "Modified — save as new"
+                    onGradientChange(edited)
+                }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -668,10 +685,25 @@ private fun GradientEditor(
                     ).padding(7.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text(
-                    "Stop ${index + 1} • ${(stop.position * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.labelSmall,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Stop ${index + 1} • ${(stop.position * 100).roundToInt()}%",
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                    Button(
+                        enabled = gradient.stops.size > 2,
+                        onClick = {
+                            val next = gradient.stops.toMutableList().also { it.removeAt(index) }
+                            onChange(gradient.copy(stops = next))
+                        },
+                    ) {
+                        Text("Delete", fontSize = 11.sp)
+                    }
+                }
                 Slider(
                     value = stop.position,
                     onValueChange = { position ->
