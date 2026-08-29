@@ -27,13 +27,13 @@
     <string name="support">Support</string>
     <string name="issue_tracker">Issue tracker</string>
     <string name="developer_matrix_chatroom">Developer Matrix chatroom</string>
-    <string name="donate_to_thumbkey">Donate to Thumb-Key</string>
+    <string name="donate_to_thumbkey">Support upstream Thumb-Key</string>
     <string name="social">Social</string>
-    <string name="join_c_thumbkey">Join c/thumbkey</string>
-    <string name="follow_me_mastodon">Follow me on Mastodon</string>
+    <string name="join_c_thumbkey">Thumb-Key community</string>
+    <string name="follow_me_mastodon">Follow upstream developer on Mastodon</string>
     <string name="open_source">Open source</string>
     <string name="source_code">Source code</string>
-    <string name="source_code_subtitle">Fishwi is libre open-source software, based on Keywi / Thumb-Key and licensed under the GNU Affero General Public License v3.0</string>
+    <string name="source_code_subtitle">Fishwi is libre open-source software, descended from Keywi and Thumb-Key and licensed under the GNU Affero General Public License v3.0</string>
     <string name="look_and_feel">Look and feel</string>
     <string name="behavior">Behavior</string>
     <string name="layouts">Layouts</string>
@@ -102,7 +102,7 @@
     <string name="restore_database">Restore database</string>
     <string name="restore_database_warning">Warning: This will clear out your current database</string>
     <string name="database_backed_up">Database Backed up.</string>
-    <string name="database_operation_failed">Operation failed: %1$s</string>
+    <string name="database_operation_failed">Database operation failed: %1$s</string>
     <string name="backup_and_restore">Backup and restore</string>
     <string name="modify_keys">Modify keys</string>
     <string name="key_modification_placeholder">Enter YAML</string>
