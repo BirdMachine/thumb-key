@@ -143,6 +143,19 @@ fun SettingsScreen(
                         onClick = { navController.navigate("advancedLookAndFeel") },
                     )
                     Preference(
+                        title = { Text("Advanced Key & Word Selection") },
+                        summary = {
+                            Text("Matrix remapper, unfinished-word chip, and personal dictionary")
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.KeyboardAlt,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedKeyWordSelection") },
+                    )
+                    Preference(
                         title = { Text(stringResource(R.string.behavior)) },
                         icon = {
                             Icon(
