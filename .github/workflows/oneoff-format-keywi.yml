@@ -1,0 +1,35 @@
+name: One-off Kotlin format repair
+
+on:
+  push:
+    branches:
+      - birdie/gradient-backgrounds
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Format Kotlin
+        run: ./gradlew formatKotlin
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Kotlin formatting"
+          git push origin HEAD:birdie/gradient-backgrounds
