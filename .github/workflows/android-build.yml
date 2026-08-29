@@ -1,18 +1,17 @@
-name: Keywi CI
+name: Fishwi CI
 
 on:
   push:
     branches:
-      - "birdie/**"
       - "fishwi"
 
 concurrency:
-  group: keywi-ci-${{ github.ref }}
+  group: fishwi-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   validate-build:
-    name: Validate & build debug APK
+    name: Validate & build Fishwi debug APK
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,11 +25,11 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Restore stable Keywi debug signing key
+      - name: Restore stable debug signing key
         run: base64 --decode .github/keywi-debug.keystore.b64 > .github/keywi-debug.keystore
 
-      - name: Set monotonic Keywi version code
-        run: echo "KEYWI_VERSION_CODE=$((200000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Set monotonic Fishwi version code
+        run: echo "KEYWI_VERSION_CODE=$((300000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -42,18 +41,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
+      - name: Normalize Kotlin formatting
+        run: ./gradlew formatKotlin
+
       - name: Check Kotlin formatting
         run: ./gradlew lintKotlin
 
       - name: Run Android lint
         run: ./gradlew lint
 
-      - name: Build debug APK
+      - name: Build Fishwi debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload debug APK
+      - name: Upload Fishwi debug APK
         uses: actions/upload-artifact@v6
         with:
-          name: keywi-debug
+          name: fishwi-debug
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
