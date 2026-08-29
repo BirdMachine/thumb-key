@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpCenter
 import androidx.compose.material.icons.outlined.AppRegistration
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Info
@@ -62,11 +63,8 @@ fun SettingsScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val ctx = LocalContext.current
-
     val settings by appSettingsViewModel.appSettings.observeAsState()
-
     val scrollState = rememberScrollState()
-
     val layoutsState = keyboardLayoutsSetFromDbIndexString(settings?.keyboardLayouts)
 
     Scaffold(
@@ -88,10 +86,7 @@ fun SettingsScreen(
                 ProvidePreferenceTheme {
                     if (!(thumbkeyEnabled || thumbkeySelected)) {
                         Preference(
-                            title = {
-                                val setupStr = stringResource(R.string.setup)
-                                Text(setupStr)
-                            },
+                            title = { Text(stringResource(R.string.setup)) },
                             icon = {
                                 Icon(
                                     imageVector = Icons.Outlined.InstallMobile,
@@ -105,19 +100,13 @@ fun SettingsScreen(
                     MultiSelectListPreference(
                         value = layoutsState,
                         values = KeyboardLayout.entries.sortedBy { it.keyboardDefinition.title },
-                        valueToText = {
-                            AnnotatedString(it.keyboardDefinition.title)
-                        },
+                        valueToText = { AnnotatedString(it.keyboardDefinition.title) },
                         onValueChange = {
                             val update =
                                 it.ifEmpty {
                                     keyboardLayoutsSetFromDbIndexString(DEFAULT_KEYBOARD_LAYOUT.toString())
                                 }
-
-                            updateLayouts(
-                                appSettingsViewModel,
-                                update,
-                            )
+                            updateLayouts(appSettingsViewModel, update)
                         },
                         icon = {
                             Icon(
@@ -125,13 +114,9 @@ fun SettingsScreen(
                                 contentDescription = null,
                             )
                         },
-                        title = {
-                            Text(stringResource(R.string.layouts))
-                        },
+                        title = { Text(stringResource(R.string.layouts)) },
                         summary = {
-                            val layoutsStr =
-                                layoutsState.joinToString(", ") { it.keyboardDefinition.title }
-                            Text(layoutsStr)
+                            Text(layoutsState.joinToString(", ") { it.keyboardDefinition.title })
                         },
                     )
                     Preference(
@@ -143,6 +128,19 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { navController.navigate("lookAndFeel") },
+                    )
+                    Preference(
+                        title = { Text("Advanced look & feel") },
+                        summary = {
+                            Text("Backdrops, toolbar, keys, borders, fonts, and effects")
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedLookAndFeel") },
                     )
                     Preference(
                         title = { Text(stringResource(R.string.behavior)) },
@@ -165,11 +163,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("clipboardSettings") },
                     )
                     Preference(
-                        title = {
-                            Text(
-                                text = stringResource(R.string.modify_keys),
-                            )
-                        },
+                        title = { Text(stringResource(R.string.modify_keys)) },
                         icon = {
                             Icon(
                                 imageVector = Icons.Outlined.AppRegistration,
@@ -206,9 +200,7 @@ fun SettingsScreen(
                                 contentDescription = null,
                             )
                         },
-                        onClick = {
-                            openLink(USER_GUIDE_URL, ctx)
-                        },
+                        onClick = { openLink(USER_GUIDE_URL, ctx) },
                     )
                     Preference(
                         title = { Text(stringResource(R.string.about)) },
