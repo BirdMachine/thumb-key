@@ -53,6 +53,10 @@ import com.dessalines.thumbkey.ui.components.keyboard.KeyboardBackdrop
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardGradientStop
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SavedGradient
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionLozengeBorderStyle
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionLozengeSurfaceStyle
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionLozengeThemePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.SuggestionLozengeThemeState
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
@@ -118,6 +122,7 @@ fun AdvancedLookAndFeelScreen(navController: NavController) {
                     save = ToolbarThemePreferences::save,
                     showToolbarBorder = true,
                 )
+                SuggestionLozengeAppearanceSection()
                 KeyAppearanceSection()
                 FontAndSuggestionSection()
                 Text(
@@ -190,7 +195,7 @@ private fun SurfaceThemeSection(
             var borderColorText by remember {
                 mutableStateOf(String.format("#%08X", ToolbarBorderPreferences.loadColor(context).value.toLong()))
             }
-            Text("Toolbar border: ${String.format("%.1f", borderWidth)} dp", style = MaterialTheme.typography.titleSmall)
+            Text("Toolbar border: ${String.format("%.1f", borderWidth)} px", style = MaterialTheme.typography.titleSmall)
             Slider(
                 value = borderWidth,
                 onValueChange = { value ->
@@ -335,6 +340,171 @@ private fun SurfaceThemeSection(
 }
 
 @Composable
+private fun ManagedGradientEditor(
+    title: String,
+    gradient: KeyboardBackdrop,
+    onGradientChange: (KeyboardBackdrop) -> Unit,
+) {
+    val context = LocalContext.current
+    var gradients by remember { mutableStateOf(GradientLibrary.load(context)) }
+    var menuOpen by remember { mutableStateOf(false) }
+    var selectedName by remember { mutableStateOf("Current gradient") }
+    var saveName by remember { mutableStateOf("") }
+
+    Text("Saved gradient", style = MaterialTheme.typography.titleMedium)
+    Box {
+        Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("$selectedName  ▾")
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            gradients.forEach { saved ->
+                DropdownMenuItem(
+                    text = { Text(saved.name) },
+                    onClick = {
+                        selectedName = saved.name
+                        menuOpen = false
+                        onGradientChange(saved.toBackdrop())
+                    },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text("＋ New gradient") },
+                onClick = {
+                    selectedName = "New gradient"
+                    menuOpen = false
+                    onGradientChange(
+                        KeyboardBackdrop(
+                            angleDegrees = 0f,
+                            stops =
+                                listOf(
+                                    KeyboardGradientStop(0f, Color(0xFF151A2C)),
+                                    KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
+                                ),
+                        ),
+                    )
+                },
+            )
+        }
+    }
+    GradientEditor(title, gradient, onGradientChange)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = saveName,
+            onValueChange = { saveName = it },
+            label = { Text("Gradient name") },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        Button(
+            enabled = saveName.isNotBlank(),
+            onClick = {
+                val saved =
+                    GradientLibrary.saveCustom(
+                        context,
+                        SavedGradient(
+                            id = "",
+                            name = saveName.trim(),
+                            angleDegrees = gradient.angleDegrees,
+                            stops = gradient.stops,
+                        ),
+                    )
+                selectedName = saved.name
+                saveName = ""
+                gradients = GradientLibrary.load(context)
+            },
+        ) {
+            Text("Save")
+        }
+    }
+}
+
+@Composable
+private fun SuggestionLozengeAppearanceSection() {
+    val context = LocalContext.current
+    var state by remember { mutableStateOf(SuggestionLozengeThemePreferences.load(context)) }
+
+    fun persist(next: SuggestionLozengeThemeState) {
+        state = next
+        SuggestionLozengeThemePreferences.save(context, next)
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("Toolbar lozenges", style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Suggestion pills and the ✨ toggle get their own surface and border theme.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text("Lozenge background", style = MaterialTheme.typography.titleMedium)
+        ChipRow(
+            values = SuggestionLozengeSurfaceStyle.entries,
+            selected = state.surfaceStyle,
+            label = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
+        ) {
+            persist(state.copy(surfaceStyle = it))
+        }
+        when (state.surfaceStyle) {
+            SuggestionLozengeSurfaceStyle.GRADIENT -> {
+                ManagedGradientEditor(
+                    title = "Lozenge background gradient",
+                    gradient = state.surfaceGradient,
+                    onGradientChange = { persist(state.copy(surfaceGradient = it)) },
+                )
+            }
+
+            SuggestionLozengeSurfaceStyle.SOLID -> {
+                ColorEditor("Lozenge color", state.surfaceColor) {
+                    persist(state.copy(surfaceColor = it))
+                }
+            }
+
+            SuggestionLozengeSurfaceStyle.NONE -> {
+                Text("Transparent lozenge faces.")
+            }
+        }
+
+        Text("Lozenge border", style = MaterialTheme.typography.titleMedium)
+        ChipRow(
+            values = SuggestionLozengeBorderStyle.entries,
+            selected = state.borderStyle,
+            label = { it.name.lowercase().replaceFirstChar(Char::uppercase) },
+        ) {
+            persist(state.copy(borderStyle = it))
+        }
+        Text("Border width: ${String.format("%.1f", state.borderWidth)} dp")
+        Slider(
+            value = state.borderWidth,
+            onValueChange = { persist(state.copy(borderWidth = it)) },
+            valueRange = 0f..4f,
+        )
+        when (state.borderStyle) {
+            SuggestionLozengeBorderStyle.GRADIENT -> {
+                ManagedGradientEditor(
+                    title = "Lozenge border gradient",
+                    gradient = state.borderGradient,
+                    onGradientChange = { persist(state.copy(borderGradient = it)) },
+                )
+            }
+
+            SuggestionLozengeBorderStyle.SOLID -> {
+                ColorEditor("Lozenge border color", state.borderColor) {
+                    persist(state.copy(borderColor = it))
+                }
+            }
+
+            SuggestionLozengeBorderStyle.NONE -> {
+                Text("No lozenge border.")
+            }
+        }
+    }
+}
+
+@Composable
 private fun KeyAppearanceSection() {
     val context = LocalContext.current
     var state by remember { mutableStateOf(KeyThemePreferences.load(context)) }
@@ -381,9 +551,11 @@ private fun KeyAppearanceSection() {
         ) { persist(state.copy(borderStyle = it)) }
         when (state.borderStyle) {
             KeyBorderStyle.GRADIENT -> {
-                GradientEditor("Border gradient", state.borderGradient) {
-                    persist(state.copy(borderGradient = it))
-                }
+                ManagedGradientEditor(
+                    title = "Border gradient",
+                    gradient = state.borderGradient,
+                    onGradientChange = { persist(state.copy(borderGradient = it)) },
+                )
             }
 
             KeyBorderStyle.SOLID -> {

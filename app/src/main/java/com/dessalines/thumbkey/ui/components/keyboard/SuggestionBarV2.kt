@@ -37,9 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -185,6 +184,7 @@ private fun SuggestionLozengeSlot(
     slotIndex: Int,
     displayedCount: Int,
     motionStyle: SuggestionMotionStyle,
+    theme: SuggestionLozengeThemeState,
     onSuggestionClick: (String) -> Unit,
 ) {
     AnimatedContent(
@@ -198,24 +198,66 @@ private fun SuggestionLozengeSlot(
         } else {
             val isBest = (displayedCount > 1 && slotIndex == 1) || displayedCount == 1
             Box(modifier = Modifier.padding(end = 6.dp)) {
+                val shape = RoundedCornerShape(18.dp)
+                val themedModifier =
+                    Modifier
+                        .widthIn(min = 58.dp, max = 180.dp)
+                        .clip(shape)
+                        .then(
+                            when (theme.surfaceStyle) {
+                                SuggestionLozengeSurfaceStyle.GRADIENT -> {
+                                    Modifier.keyboardGradientBackground(theme.surfaceGradient)
+                                }
+
+                                SuggestionLozengeSurfaceStyle.SOLID,
+                                SuggestionLozengeSurfaceStyle.NONE,
+                                -> {
+                                    Modifier
+                                }
+                            },
+                        ).then(
+                            when (theme.borderStyle) {
+                                SuggestionLozengeBorderStyle.GRADIENT -> {
+                                    Modifier.keyboardGradientBorder(
+                                        backdrop = theme.borderGradient,
+                                        width = theme.borderWidth.dp,
+                                        radius = 18.dp,
+                                    )
+                                }
+
+                                SuggestionLozengeBorderStyle.SOLID,
+                                SuggestionLozengeBorderStyle.NONE,
+                                -> {
+                                    Modifier
+                                }
+                            },
+                        )
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = shape,
                     color =
-                        MaterialTheme.colorScheme.surfaceVariant.copy(
-                            alpha = if (isBest) 0.72f else 0.50f,
-                        ),
+                        when (theme.surfaceStyle) {
+                            SuggestionLozengeSurfaceStyle.SOLID -> theme.surfaceColor
+
+                            SuggestionLozengeSurfaceStyle.GRADIENT,
+                            SuggestionLozengeSurfaceStyle.NONE,
+                            -> Color.Transparent
+                        },
                     tonalElevation = if (isBest) 2.dp else 0.dp,
                     shadowElevation = if (isBest) 2.dp else 1.dp,
                     border =
-                        BorderStroke(
-                            if (isBest) 1.2.dp else 0.8.dp,
-                            MaterialTheme.colorScheme.onSurface.copy(
-                                alpha = if (isBest) 0.28f else 0.16f,
-                            ),
-                        ),
+                        when (theme.borderStyle) {
+                            SuggestionLozengeBorderStyle.SOLID -> {
+                                BorderStroke(theme.borderWidth.dp, theme.borderColor)
+                            }
+
+                            SuggestionLozengeBorderStyle.GRADIENT,
+                            SuggestionLozengeBorderStyle.NONE,
+                            -> {
+                                null
+                            }
+                        },
                     modifier =
-                        Modifier
-                            .widthIn(min = 58.dp, max = 180.dp)
+                        themedModifier
                             .animateContentSize(
                                 animationSpec =
                                     when (motionStyle) {
@@ -262,6 +304,7 @@ fun SuggestionBarV2(ime: IMEService) {
     var prefix by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
     val motionStyle = remember { SuggestionMotionPreferences.load(ime) }
+    val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)
 
     val inputType = ime.currentInputEditorInfo?.inputType ?: 0
     val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -296,27 +339,9 @@ fun SuggestionBarV2(ime: IMEService) {
             2 -> listOf(suggestions[1], suggestions[0])
             else -> listOf(suggestions[1], suggestions[0]) + suggestions.drop(2)
         }
-    val borderStops = BIRDIE_GOLD_BORDER.stops.map { it.position to it.color }.toTypedArray()
-
     Surface(
         color = MaterialTheme.colorScheme.surface.copy(alpha = if (enabled) 0.30f else 0.20f),
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .height(BAR_HEIGHT_DP.dp)
-                .drawWithCache {
-                    val brush = Brush.linearGradient(colorStops = borderStops)
-                    val strokeWidth = 2.dp.toPx()
-                    onDrawWithContent {
-                        drawContent()
-                        drawLine(
-                            brush = brush,
-                            start = Offset(0f, size.height - (strokeWidth / 2f)),
-                            end = Offset(size.width, size.height - (strokeWidth / 2f)),
-                            strokeWidth = strokeWidth,
-                        )
-                    }
-                },
+        modifier = Modifier.fillMaxWidth().height(BAR_HEIGHT_DP.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 4.dp),
@@ -339,6 +364,7 @@ fun SuggestionBarV2(ime: IMEService) {
                             slotIndex = slotIndex,
                             displayedCount = displayed.size,
                             motionStyle = motionStyle,
+                            theme = lozengeTheme,
                             onSuggestionClick = { suggestion ->
                                 val currentPrefix = prefix
                                 if (currentPrefix.isNotEmpty()) {
@@ -353,24 +379,66 @@ fun SuggestionBarV2(ime: IMEService) {
                 }
             }
 
+            val toggleShape = RoundedCornerShape(18.dp)
+            val toggleModifier =
+                Modifier
+                    .padding(start = 5.dp)
+                    .clip(toggleShape)
+                    .then(
+                        when (lozengeTheme.surfaceStyle) {
+                            SuggestionLozengeSurfaceStyle.GRADIENT -> {
+                                Modifier.keyboardGradientBackground(lozengeTheme.surfaceGradient)
+                            }
+
+                            SuggestionLozengeSurfaceStyle.SOLID,
+                            SuggestionLozengeSurfaceStyle.NONE,
+                            -> {
+                                Modifier
+                            }
+                        },
+                    ).then(
+                        when (lozengeTheme.borderStyle) {
+                            SuggestionLozengeBorderStyle.GRADIENT -> {
+                                Modifier.keyboardGradientBorder(
+                                    backdrop = lozengeTheme.borderGradient,
+                                    width = lozengeTheme.borderWidth.dp,
+                                    radius = 18.dp,
+                                )
+                            }
+
+                            SuggestionLozengeBorderStyle.SOLID,
+                            SuggestionLozengeBorderStyle.NONE,
+                            -> {
+                                Modifier
+                            }
+                        },
+                    )
             Surface(
-                shape = RoundedCornerShape(18.dp),
+                shape = toggleShape,
                 color =
-                    if (enabled) {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f)
+                    when (lozengeTheme.surfaceStyle) {
+                        SuggestionLozengeSurfaceStyle.SOLID -> lozengeTheme.surfaceColor
+
+                        SuggestionLozengeSurfaceStyle.GRADIENT,
+                        SuggestionLozengeSurfaceStyle.NONE,
+                        -> Color.Transparent
                     },
                 tonalElevation = if (enabled) 2.dp else 0.dp,
                 shadowElevation = 1.dp,
                 border =
-                    BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 0.24f else 0.12f),
-                    ),
+                    when (lozengeTheme.borderStyle) {
+                        SuggestionLozengeBorderStyle.SOLID -> {
+                            BorderStroke(lozengeTheme.borderWidth.dp, lozengeTheme.borderColor)
+                        }
+
+                        SuggestionLozengeBorderStyle.GRADIENT,
+                        SuggestionLozengeBorderStyle.NONE,
+                        -> {
+                            null
+                        }
+                    },
                 modifier =
-                    Modifier
-                        .padding(start = 5.dp)
+                    toggleModifier
                         .clickable {
                             enabled = !enabled
                             SuggestionPreferences.setEnabled(ime, enabled)

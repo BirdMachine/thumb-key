@@ -101,7 +101,13 @@ object ToolbarBorderPreferences {
     private const val WIDTH = "width"
     private const val COLOR = "color"
 
-    fun loadWidth(context: Context): Float = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getFloat(WIDTH, 0.6f)
+    fun loadWidth(context: Context): Float {
+        val stored =
+            context
+                .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getFloat(WIDTH, 1f)
+        return if (stored > 0f && stored < 1f) 1f else stored
+    }
 
     fun saveWidth(
         context: Context,

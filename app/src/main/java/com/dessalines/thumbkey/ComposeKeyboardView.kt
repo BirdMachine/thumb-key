@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -85,7 +84,7 @@ class ComposeKeyboardView(
                                 val toolbarBorderColor = ToolbarBorderPreferences.loadColor(ctx)
                                 if (toolbarBorderWidth > 0f) {
                                     Canvas(modifier = Modifier.fillMaxWidth().height(42.dp)) {
-                                        val stroke = toolbarBorderWidth.dp.toPx()
+                                        val stroke = toolbarBorderWidth.coerceAtLeast(1f)
                                         drawLine(
                                             toolbarBorderColor,
                                             start =
