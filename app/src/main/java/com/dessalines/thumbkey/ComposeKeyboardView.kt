@@ -155,28 +155,6 @@ class ComposeKeyboardView(
                                     1.dp
                                 }
 
-                            // The aquarium gets the same measured height as the rendered keyboard rather
-                            // than filling the IME window. This keeps the little world beside the keys.
-                            if (keywiEnabled && keyboardPosition == KeyboardPosition.Right && keyboardHeightPx > 0) {
-                                FishwiAquarium(
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.TopStart)
-                                            .fillMaxWidth(0.29f)
-                                            .height(aquariumHeight)
-                                            .padding(end = 3.dp),
-                                )
-                            } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left && keyboardHeightPx > 0) {
-                                FishwiAquarium(
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.TopEnd)
-                                            .fillMaxWidth(0.29f)
-                                            .height(aquariumHeight)
-                                            .padding(start = 3.dp),
-                                )
-                            }
-
                             val keyboardSettings =
                                 if (!keywiEnabled) {
                                     settings
@@ -253,6 +231,30 @@ class ComposeKeyboardView(
                                             }
                                         context.startActivity(intent)
                                     },
+                                )
+                            }
+
+                            // Draw the aquarium last so a full-width colorful keyboard backdrop cannot
+                            // paint over the otherwise-empty side of a left/right keyboard layout.
+                            if (keywiEnabled && keyboardPosition == KeyboardPosition.Right && keyboardHeightPx > 0) {
+                                FishwiAquarium(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.TopStart)
+                                            .fillMaxWidth(0.29f)
+                                            .height(aquariumHeight)
+                                            .padding(end = 3.dp)
+                                            .zIndex(2f),
+                                )
+                            } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left && keyboardHeightPx > 0) {
+                                FishwiAquarium(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.TopEnd)
+                                            .fillMaxWidth(0.29f)
+                                            .height(aquariumHeight)
+                                            .padding(start = 3.dp)
+                                            .zIndex(2f),
                                 )
                             }
                         }
