@@ -117,7 +117,10 @@ private object LocalSuggestionEngineV2 {
 
 private fun lozengeTransform(style: SuggestionMotionStyle): ContentTransform =
     when (style) {
-        SuggestionMotionStyle.NONE -> fadeIn(tween(1)) togetherWith fadeOut(tween(1))
+        SuggestionMotionStyle.NONE -> {
+            fadeIn(tween(1)) togetherWith fadeOut(tween(1))
+        }
+
         SuggestionMotionStyle.SPRINGY -> {
             val enter =
                 fadeIn(tween(70)) +
@@ -147,6 +150,7 @@ private fun lozengeTransform(style: SuggestionMotionStyle): ContentTransform =
                     )
             enter togetherWith exit
         }
+
         SuggestionMotionStyle.GOOEY -> {
             val enter =
                 fadeIn(tween(95)) +
@@ -212,10 +216,15 @@ private fun SuggestionLozengeSlot(
                                 Modifier
                             } else {
                                 when (theme.surfaceStyle) {
-                                    SuggestionLozengeSurfaceStyle.GRADIENT -> Modifier.keyboardGradientBackground(theme.surfaceGradient)
+                                    SuggestionLozengeSurfaceStyle.GRADIENT -> {
+                                        Modifier.keyboardGradientBackground(theme.surfaceGradient)
+                                    }
+
                                     SuggestionLozengeSurfaceStyle.SOLID,
                                     SuggestionLozengeSurfaceStyle.NONE,
-                                    -> Modifier
+                                    -> {
+                                        Modifier
+                                    }
                                 }
                             },
                         ).then(
@@ -223,15 +232,19 @@ private fun SuggestionLozengeSlot(
                                 Modifier
                             } else {
                                 when (theme.borderStyle) {
-                                    SuggestionLozengeBorderStyle.GRADIENT ->
+                                    SuggestionLozengeBorderStyle.GRADIENT -> {
                                         Modifier.keyboardGradientBorder(
                                             backdrop = theme.borderGradient,
                                             width = theme.borderWidth.dp,
                                             radius = 18.dp,
                                         )
+                                    }
+
                                     SuggestionLozengeBorderStyle.SOLID,
                                     SuggestionLozengeBorderStyle.NONE,
-                                    -> Modifier
+                                    -> {
+                                        Modifier
+                                    }
                                 }
                             },
                         )
@@ -242,10 +255,15 @@ private fun SuggestionLozengeSlot(
                             Color(0xFF031005)
                         } else {
                             when (theme.surfaceStyle) {
-                                SuggestionLozengeSurfaceStyle.SOLID -> theme.surfaceColor
+                                SuggestionLozengeSurfaceStyle.SOLID -> {
+                                    theme.surfaceColor
+                                }
+
                                 SuggestionLozengeSurfaceStyle.GRADIENT,
                                 SuggestionLozengeSurfaceStyle.NONE,
-                                -> Color.Transparent
+                                -> {
+                                    Color.Transparent
+                                }
                             }
                         },
                     tonalElevation = if (isBest) 2.dp else 0.dp,
@@ -255,10 +273,15 @@ private fun SuggestionLozengeSlot(
                             BorderStroke(1.dp, MATRIX_WORD_GREEN)
                         } else {
                             when (theme.borderStyle) {
-                                SuggestionLozengeBorderStyle.SOLID -> BorderStroke(theme.borderWidth.dp, theme.borderColor)
+                                SuggestionLozengeBorderStyle.SOLID -> {
+                                    BorderStroke(theme.borderWidth.dp, theme.borderColor)
+                                }
+
                                 SuggestionLozengeBorderStyle.GRADIENT,
                                 SuggestionLozengeBorderStyle.NONE,
-                                -> null
+                                -> {
+                                    null
+                                }
                             }
                         },
                     modifier =
@@ -266,17 +289,23 @@ private fun SuggestionLozengeSlot(
                             .animateContentSize(
                                 animationSpec =
                                     when (motionStyle) {
-                                        SuggestionMotionStyle.NONE -> spring(stiffness = Spring.StiffnessHigh)
-                                        SuggestionMotionStyle.SPRINGY ->
+                                        SuggestionMotionStyle.NONE -> {
+                                            spring(stiffness = Spring.StiffnessHigh)
+                                        }
+
+                                        SuggestionMotionStyle.SPRINGY -> {
                                             spring(
                                                 dampingRatio = Spring.DampingRatioMediumBouncy,
                                                 stiffness = Spring.StiffnessMediumLow,
                                             )
-                                        SuggestionMotionStyle.GOOEY ->
+                                        }
+
+                                        SuggestionMotionStyle.GOOEY -> {
                                             spring(
                                                 dampingRatio = 0.30f,
                                                 stiffness = Spring.StiffnessLow,
                                             )
+                                        }
                                     },
                             ).combinedClickable(
                                 onClick = { onSuggestionClick(currentSuggestion) },
@@ -291,7 +320,9 @@ private fun SuggestionLozengeSlot(
                             if (isCurrentWord) {
                                 MATRIX_WORD_GREEN
                             } else {
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = if (isBest) 1f else 0.88f)
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = if (isBest) 1f else 0.88f,
+                                )
                             },
                         fontWeight = if (isCurrentWord || isBest) FontWeight.Bold else FontWeight.Medium,
                         modifier = Modifier.padding(horizontal = 13.dp, vertical = 6.dp),
@@ -307,10 +338,10 @@ fun SuggestionBarV2(ime: IMEService) {
     var enabled by remember { mutableStateOf(SuggestionPreferences.enabled(ime)) }
     var prefix by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
+    var showCurrentWord by remember { mutableStateOf(AdvancedKeyWordPreferences.showCurrentWord(ime)) }
+    var longPressAddWord by remember { mutableStateOf(AdvancedKeyWordPreferences.longPressAddWord(ime)) }
     val motionStyle = remember { SuggestionMotionPreferences.load(ime) }
     val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)
-    val showCurrentWord = remember { AdvancedKeyWordPreferences.showCurrentWord(ime) }
-    val longPressAddWord = remember { AdvancedKeyWordPreferences.longPressAddWord(ime) }
 
     val inputType = ime.currentInputEditorInfo?.inputType ?: 0
     val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -321,6 +352,8 @@ fun SuggestionBarV2(ime: IMEService) {
 
     LaunchedEffect(enabled, privateField) {
         while (enabled && !privateField) {
+            showCurrentWord = AdvancedKeyWordPreferences.showCurrentWord(ime)
+            longPressAddWord = AdvancedKeyWordPreferences.longPressAddWord(ime)
             val beforeCursor =
                 ime.currentInputConnection
                     ?.getTextBeforeCursor(64, 0)
@@ -341,9 +374,17 @@ fun SuggestionBarV2(ime: IMEService) {
 
     val orderedSuggestions =
         when (suggestions.size) {
-            0, 1 -> suggestions
-            2 -> listOf(suggestions[1], suggestions[0])
-            else -> listOf(suggestions[1], suggestions[0]) + suggestions.drop(2)
+            0, 1 -> {
+                suggestions
+            }
+
+            2 -> {
+                listOf(suggestions[1], suggestions[0])
+            }
+
+            else -> {
+                listOf(suggestions[1], suggestions[0]) + suggestions.drop(2)
+            }
         }
     val currentWordVisible = showCurrentWord && prefix.isNotEmpty()
     val displayed =
@@ -363,7 +404,10 @@ fun SuggestionBarV2(ime: IMEService) {
                 contentAlignment = Alignment.Center,
             ) {
                 Row(
-                    modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 2.dp),
+                    modifier =
+                        Modifier
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     repeat(MAX_VISIBLE_SUGGESTIONS) { slotIndex ->
@@ -396,9 +440,19 @@ fun SuggestionBarV2(ime: IMEService) {
                                                 Locale.getDefault(),
                                             )
                                         }.onSuccess {
-                                            Toast.makeText(ime, "Added “$word” to personal dictionary", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    ime,
+                                                    "Added “$word” to personal dictionary",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }.onFailure {
-                                            Toast.makeText(ime, "Could not add “$word”", Toast.LENGTH_SHORT).show()
+                                            Toast
+                                                .makeText(
+                                                    ime,
+                                                    "Could not add “$word”",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         }
                                     }
                                 } else {
@@ -416,41 +470,60 @@ fun SuggestionBarV2(ime: IMEService) {
                     .clip(toggleShape)
                     .then(
                         when (lozengeTheme.surfaceStyle) {
-                            SuggestionLozengeSurfaceStyle.GRADIENT -> Modifier.keyboardGradientBackground(lozengeTheme.surfaceGradient)
+                            SuggestionLozengeSurfaceStyle.GRADIENT -> {
+                                Modifier.keyboardGradientBackground(lozengeTheme.surfaceGradient)
+                            }
+
                             SuggestionLozengeSurfaceStyle.SOLID,
                             SuggestionLozengeSurfaceStyle.NONE,
-                            -> Modifier
+                            -> {
+                                Modifier
+                            }
                         },
                     ).then(
                         when (lozengeTheme.borderStyle) {
-                            SuggestionLozengeBorderStyle.GRADIENT ->
+                            SuggestionLozengeBorderStyle.GRADIENT -> {
                                 Modifier.keyboardGradientBorder(
                                     backdrop = lozengeTheme.borderGradient,
                                     width = lozengeTheme.borderWidth.dp,
                                     radius = 18.dp,
                                 )
+                            }
+
                             SuggestionLozengeBorderStyle.SOLID,
                             SuggestionLozengeBorderStyle.NONE,
-                            -> Modifier
+                            -> {
+                                Modifier
+                            }
                         },
                     )
             Surface(
                 shape = toggleShape,
                 color =
                     when (lozengeTheme.surfaceStyle) {
-                        SuggestionLozengeSurfaceStyle.SOLID -> lozengeTheme.surfaceColor
+                        SuggestionLozengeSurfaceStyle.SOLID -> {
+                            lozengeTheme.surfaceColor
+                        }
+
                         SuggestionLozengeSurfaceStyle.GRADIENT,
                         SuggestionLozengeSurfaceStyle.NONE,
-                        -> Color.Transparent
+                        -> {
+                            Color.Transparent
+                        }
                     },
                 tonalElevation = if (enabled) 2.dp else 0.dp,
                 shadowElevation = 1.dp,
                 border =
                     when (lozengeTheme.borderStyle) {
-                        SuggestionLozengeBorderStyle.SOLID -> BorderStroke(lozengeTheme.borderWidth.dp, lozengeTheme.borderColor)
+                        SuggestionLozengeBorderStyle.SOLID -> {
+                            BorderStroke(lozengeTheme.borderWidth.dp, lozengeTheme.borderColor)
+                        }
+
                         SuggestionLozengeBorderStyle.GRADIENT,
                         SuggestionLozengeBorderStyle.NONE,
-                        -> null
+                        -> {
+                            null
+                        }
                     },
                 modifier =
                     toggleModifier.clickable {
