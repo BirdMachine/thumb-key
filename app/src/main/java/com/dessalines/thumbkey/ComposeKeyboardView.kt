@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -23,14 +22,17 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
 import com.dessalines.thumbkey.db.DEFAULT_BACKDROP_ENABLED
+import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
+import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
 import com.dessalines.thumbkey.utils.KeyboardPosition
 import com.dessalines.thumbkey.utils.keyboardLayoutsSetFromDbIndexString
@@ -50,12 +52,11 @@ class ComposeKeyboardView(
         val settings by settingsState
         val ctx = context as IMEService
 
-        ThumbkeyTheme(
-            settings = settings,
-        ) {
+        ThumbkeyTheme(settings = settings) {
             val backdropEnabled =
                 BuildConfig.DEBUG || (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
-            val backdropState = BackdropThemePreferences.load(ctx)
+            val mainBackdrop = BackdropThemePreferences.load(ctx)
+            val toolbarBackdrop = ToolbarThemePreferences.load(ctx)
             val keyboardColorScheme =
                 if (backdropEnabled) {
                     MaterialTheme.colorScheme.copy(background = Color.Transparent)
@@ -66,98 +67,109 @@ class ComposeKeyboardView(
             var keyboardHeightPx by remember { mutableIntStateOf(0) }
 
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    if (backdropEnabled && keyboardHeightPx > 0) {
-                        BackdropVisualLayer(
-                            state = backdropState,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(with(density) { keyboardHeightPx.toDp() }),
-                        )
+                MaterialTheme(colorScheme = keyboardColorScheme) {
+                    Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+                        if (backdropEnabled && toolbarBackdrop.mode != BackdropMode.NONE) {
+                            BackdropVisualLayer(
+                                state = toolbarBackdrop,
+                                modifier = Modifier.fillMaxWidth().height(42.dp),
+                            )
+                        }
+                        SuggestionBarV2(ctx)
                     }
-                    MaterialTheme(colorScheme = keyboardColorScheme) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .onSizeChanged { size ->
-                                        if (size.height != keyboardHeightPx) {
-                                            keyboardHeightPx = size.height
-                                        }
-                                    },
+
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { size ->
+                                    if (size.height != keyboardHeightPx) {
+                                        keyboardHeightPx = size.height
+                                    }
+                                },
+                    ) {
+                        if (
+                            backdropEnabled &&
+                            keyboardHeightPx > 0 &&
+                            mainBackdrop.mode != BackdropMode.COLORFUL &&
+                            mainBackdrop.mode != BackdropMode.NONE
                         ) {
-                            SuggestionBarV2(ctx)
-                            KeyboardScreen(
-                                settings = settings,
-                                clipboardRepository = clipboardRepo,
-                                onSwitchLanguage = {
-                                    ctx.lifecycleScope.launch {
-                                        // Cycle to the next keyboard
-                                        val state = settingsState.value
-                                        state?.let { s ->
+                            BackdropVisualLayer(
+                                state = mainBackdrop,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(with(density) { keyboardHeightPx.toDp() }),
+                            )
+                        }
 
-                                            val layouts =
-                                                keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
-                                            val currentLayout = s.keyboardLayout
-                                            val index = layouts.map { it.ordinal }.indexOf(currentLayout)
-                                            val nextIndex = (index + 1).mod(layouts.size)
-                                            val nextLayout = layouts.getOrNull(nextIndex)
-                                            nextLayout?.let { layout ->
-                                                val s2 = s.copy(keyboardLayout = layout.ordinal)
-                                                settingsRepo.update(s2)
+                        val keyboardSettings =
+                            if (mainBackdrop.mode == BackdropMode.COLORFUL) {
+                                settings
+                            } else {
+                                settings?.copy(backdropEnabled = 0)
+                            }
 
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.handleFinishInput(ctx)
-                                                ctx.currentKeyboardDefinition = (layouts[nextIndex].keyboardDefinition)
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.updateCursorPosition(ctx)
+                        KeyboardScreen(
+                            settings = keyboardSettings,
+                            clipboardRepository = clipboardRepo,
+                            onSwitchLanguage = {
+                                ctx.lifecycleScope.launch {
+                                    val state = settingsState.value
+                                    state?.let { s ->
+                                        val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
+                                        val currentLayout = s.keyboardLayout
+                                        val index = layouts.map { it.ordinal }.indexOf(currentLayout)
+                                        val nextIndex = (index + 1).mod(layouts.size)
+                                        val nextLayout = layouts.getOrNull(nextIndex)
+                                        nextLayout?.let { layout ->
+                                            val s2 = s.copy(keyboardLayout = layout.ordinal)
+                                            settingsRepo.update(s2)
 
-                                                // Display the new layout's name on the screen
-                                                if (s.showToastOnLayoutSwitch.toBool()) {
-                                                    val layoutName = layout.keyboardDefinition.title
-                                                    Toast
-                                                        .makeText(context, layoutName, Toast.LENGTH_SHORT)
-                                                        .show()
-                                                }
+                                            ctx.currentKeyboardDefinition
+                                                ?.settings
+                                                ?.textProcessor
+                                                ?.handleFinishInput(ctx)
+                                            ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
+                                            ctx.currentKeyboardDefinition
+                                                ?.settings
+                                                ?.textProcessor
+                                                ?.updateCursorPosition(ctx)
+
+                                            if (s.showToastOnLayoutSwitch.toBool()) {
+                                                Toast
+                                                    .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
+                                                    .show()
                                             }
                                         }
                                     }
-                                },
-                                onChangePosition = { f ->
-                                    ctx.lifecycleScope.launch {
-                                        val state = settingsState.value
-                                        state?.let { s ->
-                                            val nextPosition = f(KeyboardPosition.entries[s.position]).ordinal
-                                            val s2 = s.copy(position = nextPosition)
-                                            settingsRepo.update(s2)
-                                        }
+                                }
+                            },
+                            onChangePosition = { f ->
+                                ctx.lifecycleScope.launch {
+                                    settingsState.value?.let { state ->
+                                        val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
+                                        settingsRepo.update(state.copy(position = nextPosition))
                                     }
-                                },
-                                onToggleHideLetters = {
-                                    ctx.lifecycleScope.launch {
-                                        val state = settingsState.value
-                                        state?.let { s ->
-                                            val newHideLetters = (!s.hideLetters.toBool()).toInt()
-                                            val s2 = s.copy(hideLetters = newHideLetters)
-                                            settingsRepo.update(s2)
-                                        }
+                                }
+                            },
+                            onToggleHideLetters = {
+                                ctx.lifecycleScope.launch {
+                                    settingsState.value?.let { state ->
+                                        val hidden = (!state.hideLetters.toBool()).toInt()
+                                        settingsRepo.update(state.copy(hideLetters = hidden))
                                     }
-                                },
-                                onGoToClipboardSettings = {
-                                    val intent =
-                                        Intent(context, MainActivity::class.java).apply {
-                                            putExtra("startRoute", "clipboardSettings")
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                        }
-                                    context.startActivity(intent)
-                                },
-                            )
-                        }
+                                }
+                            },
+                            onGoToClipboardSettings = {
+                                val intent =
+                                    Intent(context, MainActivity::class.java).apply {
+                                        putExtra("startRoute", "clipboardSettings")
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                    }
+                                context.startActivity(intent)
+                            },
+                        )
                     }
                 }
             }
