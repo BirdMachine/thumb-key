@@ -322,73 +322,162 @@ private fun DrawScope.drawTank(shimmer: Float) {
     drawRect(Color(0xAA185C68), topLeft = Offset(0f, size.height * .04f), size = Size(size.width, size.height * .70f))
     drawRect(Color(0xFF163C3D), topLeft = Offset(0f, size.height * .88f), size = Size(size.width, size.height * .12f))
 
-    // Pixel gravel
-    val step = max(6f, size.width / 24f)
+    // Finer 16-bit-ish gravel: still pixel art, but no giant block staircase.
+    val step = max(4f, size.width / 34f)
     var x = 0f
     var i = 0
     while (x < size.width) {
-        val h = if (i % 3 == 0) step * .75f else step * .45f
-        drawRect(
-            if (i % 2 == 0) Color(0xFF6D6B55) else Color(0xFF8D775C),
-            topLeft = Offset(x, size.height * .91f - h),
-            size = Size(step + 1f, h),
-        )
+        val h = if (i % 3 == 0) step * .72f else step * .46f
+        val gravel =
+            when (i % 4) {
+                0 -> Color(0xFF565B51)
+                1 -> Color(0xFF77705A)
+                2 -> Color(0xFF9A8061)
+                else -> Color(0xFF6A6656)
+            }
+        drawRect(gravel, topLeft = Offset(x, size.height * .91f - h), size = Size(step + 1f, h))
+        if (i % 3 == 1) {
+            drawRect(
+                Color(0xFFB49A73),
+                topLeft = Offset(x + step * .25f, size.height * .91f - h * .55f),
+                size = Size(step * .38f, max(1.5f, h * .18f)),
+            )
+        }
         x += step
         i++
     }
 
-    // Plants: chunky pixel stems/leaves
+    // Plants use tapered stems and stepped leaves for a SNES/GBA-ish silhouette.
     fun plant(px: Float, base: Float, tall: Float, c: Color) {
-        val stem = max(3f, size.width / 65f)
+        val stem = max(2f, size.width / 85f)
         drawRect(c, Offset(px, base - tall), Size(stem, tall))
-        repeat(4) { n ->
-            val yy = base - tall * (.18f + n * .19f)
+        repeat(5) { n ->
+            val yy = base - tall * (.16f + n * .16f)
             val side = if (n % 2 == 0) -1f else 1f
-            drawRect(c, Offset(px + side * stem * 2f, yy), Size(stem * 3f, stem * 1.6f))
+            val leaf = Path().apply {
+                moveTo(px + stem * .5f, yy + stem)
+                lineTo(px + side * stem * 2.2f, yy - stem * .55f)
+                lineTo(px + side * stem * 4.8f, yy)
+                lineTo(px + side * stem * 2.8f, yy + stem * 1.45f)
+                close()
+            }
+            drawPath(leaf, c)
+            drawPath(leaf, Color.White.copy(alpha = .06f))
         }
     }
     plant(size.width * .13f, size.height * .90f, size.height * .34f, Color(0xFF3D9D63))
     plant(size.width * .82f, size.height * .90f, size.height * .25f, Color(0xFF52B970))
     plant(size.width * .72f, size.height * .90f, size.height * .18f, Color(0xFF2D8155))
 
-    // Surface shimmer
     val shimmerX = (shimmer * (size.width + size.width * .35f)) - size.width * .35f
     drawRect(Color(0x225EE7E7), Offset(shimmerX, size.height * .08f), Size(size.width * .28f, size.height * .025f))
 }
 
 private fun DrawScope.drawFish(f: Fish) {
-    val base = max(5f, size.width / 34f)
-    val scale = 1f + f.growth * .38f
-    val bodyW = base * 3.2f * scale
-    val bodyH = base * 1.55f * scale
+    val px = max(2f, size.width / 96f)
+    val scale = 1f + f.growth * .34f
+    val bodyW = px * 12f * scale
+    val bodyH = px * 6f * scale
     val cx = f.x * size.width
     val cy = f.y * size.height
     val facingRight = f.vx >= 0f
+    val dir = if (facingRight) 1f else -1f
+
     val palettes = listOf(
-        Triple(Color(0xFFFF6F61), Color(0xFFFFC857), Color(0xFFF7F4E8)),
-        Triple(Color(0xFF58C7D9), Color(0xFF7A8CFF), Color(0xFFE7FAFF)),
-        Triple(Color(0xFFE885D1), Color(0xFFA66FEA), Color(0xFFFFE9FA)),
+        listOf(Color(0xFFB53A3A), Color(0xFFFF6F61), Color(0xFFFFA45C), Color(0xFFFFD88A), Color(0xFFF8F2E2)),
+        listOf(Color(0xFF286B8F), Color(0xFF45AFC4), Color(0xFF6DD7D2), Color(0xFF9FE9E1), Color(0xFFE7FAFF)),
+        listOf(Color(0xFF7B3E91), Color(0xFFB55CB9), Color(0xFFE885D1), Color(0xFFF4B7E5), Color(0xFFFFE9FA)),
     )
-    val (body, fin, shine) = palettes[f.palette % palettes.size]
+    val palette = palettes[f.palette % palettes.size]
+    val shadow = palette[0]
+    val body = palette[1]
+    val mid = palette[2]
+    val highlight = palette[3]
+    val shine = palette[4]
 
-    val left = cx - bodyW / 2f
-    val top = cy - bodyH / 2f
-    drawRect(body, Offset(left, top), Size(bodyW, bodyH))
-    drawRect(fin, Offset(left + bodyW * .25f, top + bodyH * .18f), Size(bodyW * .35f, bodyH * .28f))
-    drawRect(shine, Offset(left + bodyW * .20f, top + bodyH * .10f), Size(bodyW * .25f, max(2f, bodyH * .12f)))
-
-    val tailX = if (facingRight) left else left + bodyW
-    val tail = Path().apply {
-        moveTo(tailX, cy)
-        lineTo(if (facingRight) tailX - bodyW * .46f else tailX + bodyW * .46f, cy - bodyH * .55f)
-        lineTo(if (facingRight) tailX - bodyW * .46f else tailX + bodyW * .46f, cy + bodyH * .55f)
+    // Stepped oval body, deliberately more SNES/GBA than huge Atari blocks.
+    val bodyPath = Path().apply {
+        moveTo(cx - dir * bodyW * .48f, cy)
+        lineTo(cx - dir * bodyW * .34f, cy - bodyH * .38f)
+        lineTo(cx - dir * bodyW * .08f, cy - bodyH * .50f)
+        lineTo(cx + dir * bodyW * .25f, cy - bodyH * .46f)
+        lineTo(cx + dir * bodyW * .46f, cy - bodyH * .22f)
+        lineTo(cx + dir * bodyW * .52f, cy)
+        lineTo(cx + dir * bodyW * .43f, cy + bodyH * .28f)
+        lineTo(cx + dir * bodyW * .12f, cy + bodyH * .46f)
+        lineTo(cx - dir * bodyW * .20f, cy + bodyH * .42f)
+        lineTo(cx - dir * bodyW * .42f, cy + bodyH * .22f)
         close()
     }
-    drawPath(tail, fin)
+    drawPath(bodyPath, body)
 
-    val eyeX = if (facingRight) left + bodyW * .78f else left + bodyW * .22f
-    drawCircle(Color(0xFFF8FBFA), max(2.2f, base * .20f), Offset(eyeX, top + bodyH * .35f))
-    drawCircle(Color(0xFF071517), max(1.2f, base * .10f), Offset(eyeX + if (facingRight) 1f else -1f, top + bodyH * .35f))
+    // Tail with two lobes and a darker hinge.
+    val tailBaseX = cx - dir * bodyW * .43f
+    val tailTipX = cx - dir * bodyW * .80f
+    val tail = Path().apply {
+        moveTo(tailBaseX, cy)
+        lineTo(tailTipX, cy - bodyH * .52f)
+        lineTo(tailTipX + dir * px, cy - bodyH * .05f)
+        lineTo(tailTipX, cy + bodyH * .52f)
+        close()
+    }
+    drawPath(tail, mid)
+    drawRect(
+        shadow,
+        Offset(minOf(tailBaseX, tailBaseX - dir * px), cy - bodyH * .24f),
+        Size(px, bodyH * .48f),
+    )
+
+    // Dorsal + belly fins give the silhouette some actual fishiness.
+    val dorsal = Path().apply {
+        moveTo(cx - dir * bodyW * .10f, cy - bodyH * .42f)
+        lineTo(cx - dir * bodyW * .02f, cy - bodyH * .72f)
+        lineTo(cx + dir * bodyW * .18f, cy - bodyH * .44f)
+        close()
+    }
+    drawPath(dorsal, mid)
+    val bellyFin = Path().apply {
+        moveTo(cx, cy + bodyH * .36f)
+        lineTo(cx - dir * bodyW * .04f, cy + bodyH * .68f)
+        lineTo(cx + dir * bodyW * .17f, cy + bodyH * .40f)
+        close()
+    }
+    drawPath(bellyFin, shadow)
+
+    // Three-tone body shading reads like a tiny 16/32-bit sprite without blurring.
+    val midStripeX = cx - dir * bodyW * .10f
+    drawRect(
+        mid,
+        Offset(minOf(midStripeX, midStripeX + dir * bodyW * .24f), cy - bodyH * .28f),
+        Size(bodyW * .24f, bodyH * .52f),
+    )
+    val highlightX = cx + dir * bodyW * .12f
+    drawRect(
+        highlight,
+        Offset(minOf(highlightX, highlightX + dir * bodyW * .18f), cy - bodyH * .34f),
+        Size(bodyW * .18f, max(px, bodyH * .16f)),
+    )
+    drawRect(
+        shine,
+        Offset(cx - dir * bodyW * .02f - px * .5f, cy - bodyH * .34f),
+        Size(px * 1.5f, max(px, bodyH * .11f)),
+    )
+
+    // A couple of scale glints keep each fish from reading as a flat rectangle.
+    drawRect(shine.copy(alpha = .55f), Offset(cx - bodyW * .08f, cy + bodyH * .04f), Size(px, px))
+    drawRect(highlight.copy(alpha = .70f), Offset(cx + bodyW * .08f, cy + bodyH * .14f), Size(px, px))
+
+    val eyeX = cx + dir * bodyW * .34f
+    val eyeY = cy - bodyH * .14f
+    drawCircle(shine, max(1.7f, px * .78f), Offset(eyeX, eyeY))
+    drawCircle(Color(0xFF071517), max(1f, px * .38f), Offset(eyeX + dir * px * .18f, eyeY))
+
+    // One-pixel mouth, because Dot deserves opinions.
+    drawRect(
+        shadow,
+        Offset(cx + dir * bodyW * .48f - if (facingRight) 0f else px, cy + px * .35f),
+        Size(px, max(1f, px * .45f)),
+    )
 }
 
 private fun DrawScope.drawFood(x: Float, y: Float) {
