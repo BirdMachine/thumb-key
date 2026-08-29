@@ -27,11 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
-import com.dessalines.thumbkey.db.DEFAULT_BACKDROP_ENABLED
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
+import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
@@ -54,12 +54,11 @@ class ComposeKeyboardView(
         val ctx = context as IMEService
 
         ThumbkeyTheme(settings = settings) {
-            val backdropEnabled =
-                BuildConfig.DEBUG || (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
+            val keywiEnabled = KeywiAppearancePreferences.load(ctx)
             val mainBackdrop = BackdropThemePreferences.load(ctx)
             val toolbarBackdrop = ToolbarThemePreferences.load(ctx)
             val keyboardColorScheme =
-                if (backdropEnabled) {
+                if (keywiEnabled) {
                     MaterialTheme.colorScheme.copy(background = Color.Transparent)
                 } else {
                     MaterialTheme.colorScheme
@@ -70,14 +69,16 @@ class ComposeKeyboardView(
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 MaterialTheme(colorScheme = keyboardColorScheme) {
                     Column(modifier = Modifier.fillMaxWidth()) {
-                        Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
-                            if (backdropEnabled && toolbarBackdrop.mode != BackdropMode.NONE) {
-                                BackdropVisualLayer(
-                                    state = toolbarBackdrop,
-                                    modifier = Modifier.fillMaxWidth().height(42.dp),
-                                )
+                        if (keywiEnabled) {
+                            Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+                                if (toolbarBackdrop.mode != BackdropMode.NONE) {
+                                    BackdropVisualLayer(
+                                        state = toolbarBackdrop,
+                                        modifier = Modifier.fillMaxWidth().height(42.dp),
+                                    )
+                                }
+                                SuggestionBarV2(ctx)
                             }
-                            SuggestionBarV2(ctx)
                         }
 
                         Box(
@@ -91,7 +92,7 @@ class ComposeKeyboardView(
                                     },
                         ) {
                             if (
-                                backdropEnabled &&
+                                keywiEnabled &&
                                 keyboardHeightPx > 0 &&
                                 mainBackdrop.mode != BackdropMode.COLORFUL &&
                                 mainBackdrop.mode != BackdropMode.NONE
@@ -106,8 +107,10 @@ class ComposeKeyboardView(
                             }
 
                             val keyboardSettings =
-                                if (mainBackdrop.mode == BackdropMode.COLORFUL) {
+                                if (!keywiEnabled) {
                                     settings
+                                } else if (mainBackdrop.mode == BackdropMode.COLORFUL) {
+                                    settings?.copy(backdropEnabled = 1)
                                 } else {
                                     settings?.copy(backdropEnabled = 0)
                                 }
