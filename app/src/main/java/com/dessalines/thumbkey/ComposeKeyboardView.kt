@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +36,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
+import com.dessalines.thumbkey.ui.components.keyboard.ToolbarLayoutPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
 import com.dessalines.thumbkey.utils.KeyboardPosition
@@ -113,6 +115,10 @@ class ComposeKeyboardView(
                                         )
                                     }
                                 }
+                            }
+                            val toolbarGap = ToolbarLayoutPreferences.loadKeyboardGap(ctx)
+                            if (toolbarGap > 0f) {
+                                Spacer(modifier = Modifier.height(toolbarGap.dp))
                             }
                         }
 
