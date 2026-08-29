@@ -45,7 +45,10 @@ object GradientLibrary {
         return builtIns + custom
     }
 
-    fun saveCustom(context: Context, gradient: SavedGradient): SavedGradient {
+    fun saveCustom(
+        context: Context,
+        gradient: SavedGradient,
+    ): SavedGradient {
         val saved = gradient.copy(id = gradient.id.ifBlank { UUID.randomUUID().toString() }, builtIn = false)
         val custom = load(context).filterNot { it.builtIn }.toMutableList()
         val index = custom.indexOfFirst { it.id == saved.id }
@@ -54,21 +57,36 @@ object GradientLibrary {
         return saved
     }
 
-    fun delete(context: Context, id: String) {
+    fun delete(
+        context: Context,
+        id: String,
+    ) {
         persist(context, load(context).filterNot { it.builtIn || it.id == id })
     }
 
     fun exportJson(context: Context): String = encodeList(load(context).filterNot { it.builtIn }).toString(2)
 
-    fun importJson(context: Context, json: String): Int {
+    fun importJson(
+        context: Context,
+        json: String,
+    ): Int {
         val imported = decodeList(json).map { it.copy(id = UUID.randomUUID().toString(), builtIn = false) }
         val custom = load(context).filterNot { it.builtIn } + imported
         persist(context, custom)
         return imported.size
     }
 
-    private fun persist(context: Context, gradients: List<SavedGradient>) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putString(KEY_GRADIENTS, encodeList(gradients).toString()).apply()
+    private fun persist(
+        context: Context,
+        gradients: List<SavedGradient>,
+    ) {
+        context
+            .getSharedPreferences(
+                PREFS_NAME,
+                Context.MODE_PRIVATE,
+            ).edit()
+            .putString(KEY_GRADIENTS, encodeList(gradients).toString())
+            .apply()
     }
 
     private fun encodeList(gradients: List<SavedGradient>): JSONArray =

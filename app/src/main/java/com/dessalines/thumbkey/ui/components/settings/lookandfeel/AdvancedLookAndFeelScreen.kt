@@ -18,10 +18,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
@@ -45,7 +45,6 @@ import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemeState
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.FontPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.GradientLibrary
-import com.dessalines.thumbkey.ui.components.keyboard.SavedGradient
 import com.dessalines.thumbkey.ui.components.keyboard.KeyBorderStyle
 import com.dessalines.thumbkey.ui.components.keyboard.KeySurfaceStyle
 import com.dessalines.thumbkey.ui.components.keyboard.KeyThemePreferences
@@ -53,6 +52,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.KeyThemeState
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardBackdrop
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardGradientStop
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.SavedGradient
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
@@ -279,10 +279,11 @@ private fun SurfaceThemeSection(
                                 state.copy(
                                     preset = BackdropPreset.CUSTOM,
                                     angleDegrees = 0f,
-                                    stops = listOf(
-                                        KeyboardGradientStop(0f, Color(0xFF151A2C)),
-                                        KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
-                                    ),
+                                    stops =
+                                        listOf(
+                                            KeyboardGradientStop(0f, Color(0xFF151A2C)),
+                                            KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
+                                        ),
                                 ),
                             )
                         },
@@ -309,15 +310,16 @@ private fun SurfaceThemeSection(
                 Button(
                     enabled = saveName.isNotBlank(),
                     onClick = {
-                        val saved = GradientLibrary.saveCustom(
-                            context,
-                            SavedGradient(
-                                id = "",
-                                name = saveName.trim(),
-                                angleDegrees = state.angleDegrees,
-                                stops = state.stops,
-                            ),
-                        )
+                        val saved =
+                            GradientLibrary.saveCustom(
+                                context,
+                                SavedGradient(
+                                    id = "",
+                                    name = saveName.trim(),
+                                    angleDegrees = state.angleDegrees,
+                                    stops = state.stops,
+                                ),
+                            )
                         selectedName = saved.name
                         saveName = ""
                         gradients = GradientLibrary.load(context)

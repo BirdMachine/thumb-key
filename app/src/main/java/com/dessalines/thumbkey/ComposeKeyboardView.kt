@@ -4,8 +4,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -86,8 +86,32 @@ class ComposeKeyboardView(
                                 if (toolbarBorderWidth > 0f) {
                                     Canvas(modifier = Modifier.fillMaxWidth().height(42.dp)) {
                                         val stroke = toolbarBorderWidth.dp.toPx()
-                                        drawLine(toolbarBorderColor, start = androidx.compose.ui.geometry.Offset(0f, stroke / 2f), end = androidx.compose.ui.geometry.Offset(size.width, stroke / 2f), strokeWidth = stroke)
-                                        drawLine(toolbarBorderColor, start = androidx.compose.ui.geometry.Offset(0f, size.height - stroke / 2f), end = androidx.compose.ui.geometry.Offset(size.width, size.height - stroke / 2f), strokeWidth = stroke)
+                                        drawLine(
+                                            toolbarBorderColor,
+                                            start =
+                                                androidx.compose.ui.geometry
+                                                    .Offset(0f, stroke / 2f),
+                                            end =
+                                                androidx.compose.ui.geometry.Offset(
+                                                    size.width,
+                                                    stroke / 2f,
+                                                ),
+                                            strokeWidth = stroke,
+                                        )
+                                        drawLine(
+                                            toolbarBorderColor,
+                                            start =
+                                                androidx.compose.ui.geometry.Offset(
+                                                    0f,
+                                                    size.height - stroke / 2f,
+                                                ),
+                                            end =
+                                                androidx.compose.ui.geometry.Offset(
+                                                    size.width,
+                                                    size.height - stroke / 2f,
+                                                ),
+                                            strokeWidth = stroke,
+                                        )
                                     }
                                 }
                             }

@@ -101,17 +101,30 @@ object ToolbarBorderPreferences {
     private const val WIDTH = "width"
     private const val COLOR = "color"
 
-    fun loadWidth(context: Context): Float =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getFloat(WIDTH, 0.6f)
+    fun loadWidth(context: Context): Float = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getFloat(WIDTH, 0.6f)
 
-    fun saveWidth(context: Context, value: Float) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putFloat(WIDTH, value.coerceIn(0f, 4f)).apply()
+    fun saveWidth(
+        context: Context,
+        value: Float,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putFloat(WIDTH, value.coerceIn(0f, 4f))
+            .apply()
     }
 
     fun loadColor(context: Context): Color =
         Color(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(COLOR, Color(0xFFFFC247).toArgb()))
 
-    fun saveColor(context: Context, value: Color) {
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putInt(COLOR, value.toArgb()).apply()
+    fun saveColor(
+        context: Context,
+        value: Color,
+    ) {
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putInt(COLOR, value.toArgb())
+            .apply()
     }
 }
