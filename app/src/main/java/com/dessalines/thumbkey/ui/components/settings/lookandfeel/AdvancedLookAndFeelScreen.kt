@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,8 @@ import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemeState
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.FontPreferences
+import com.dessalines.thumbkey.ui.components.keyboard.GradientLibrary
+import com.dessalines.thumbkey.ui.components.keyboard.SavedGradient
 import com.dessalines.thumbkey.ui.components.keyboard.KeyBorderStyle
 import com.dessalines.thumbkey.ui.components.keyboard.KeySurfaceStyle
 import com.dessalines.thumbkey.ui.components.keyboard.KeyThemePreferences
@@ -50,6 +55,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.KeyboardGradientStop
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionMotionStyle
+import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.utils.SimpleTopAppBar
 import kotlin.math.roundToInt
@@ -110,6 +116,7 @@ fun AdvancedLookAndFeelScreen(navController: NavController) {
                     subtitle = "The strip behind suggestion lozenges and the ✨ toggle.",
                     load = ToolbarThemePreferences::load,
                     save = ToolbarThemePreferences::save,
+                    showToolbarBorder = true,
                 )
                 KeyAppearanceSection()
                 FontAndSuggestionSection()
@@ -148,6 +155,7 @@ private fun SurfaceThemeSection(
     subtitle: String,
     load: (android.content.Context) -> BackdropThemeState,
     save: (android.content.Context, BackdropThemeState) -> Unit,
+    showToolbarBorder: Boolean = false,
 ) {
     val context = LocalContext.current
     var state by remember { mutableStateOf(load(context)) }
@@ -177,6 +185,33 @@ private fun SurfaceThemeSection(
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge)
         Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        if (showToolbarBorder) {
+            var borderWidth by remember { mutableStateOf(ToolbarBorderPreferences.loadWidth(context)) }
+            var borderColorText by remember {
+                mutableStateOf(String.format("#%08X", ToolbarBorderPreferences.loadColor(context).value.toLong()))
+            }
+            Text("Toolbar border: ${String.format("%.1f", borderWidth)} dp", style = MaterialTheme.typography.titleSmall)
+            Slider(
+                value = borderWidth,
+                onValueChange = { value ->
+                    borderWidth = value
+                    ToolbarBorderPreferences.saveWidth(context, value)
+                },
+                valueRange = 0f..3f,
+            )
+            OutlinedTextField(
+                value = borderColorText,
+                onValueChange = { text ->
+                    borderColorText = text
+                    runCatching { Color(android.graphics.Color.parseColor(text)) }.getOrNull()?.let { color ->
+                        ToolbarBorderPreferences.saveColor(context, color)
+                    }
+                },
+                label = { Text("Border color (#AARRGGBB or #RRGGBB)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         ChipRow(
             values = BackdropMode.entries,
             selected = state.mode,
@@ -208,22 +243,48 @@ private fun SurfaceThemeSection(
         }
 
         if (state.mode == BackdropMode.COLORFUL) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(BackdropPreset.BIRDIE_RAINBOW, BackdropPreset.SINEBOW).forEach { preset ->
-                    FilterChip(
-                        selected = state.preset == preset,
+            var gradients by remember { mutableStateOf(GradientLibrary.load(context)) }
+            var menuOpen by remember { mutableStateOf(false) }
+            var selectedName by remember { mutableStateOf("Current gradient") }
+            var saveName by remember { mutableStateOf("") }
+
+            Text("Saved gradient", style = MaterialTheme.typography.titleMedium)
+            Box {
+                Button(onClick = { menuOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("$selectedName  ▾")
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    gradients.forEach { saved ->
+                        DropdownMenuItem(
+                            text = { Text(saved.name) },
+                            onClick = {
+                                selectedName = saved.name
+                                menuOpen = false
+                                persist(
+                                    state.copy(
+                                        preset = BackdropPreset.CUSTOM,
+                                        angleDegrees = saved.angleDegrees,
+                                        stops = saved.stops,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text("＋ New gradient") },
                         onClick = {
-                            val selectedPreset = BackdropThemePreferences.stateForPreset(preset)
+                            selectedName = "New gradient"
+                            menuOpen = false
                             persist(
                                 state.copy(
-                                    preset = preset,
-                                    angleDegrees = selectedPreset.angleDegrees,
-                                    stops = selectedPreset.stops,
+                                    preset = BackdropPreset.CUSTOM,
+                                    angleDegrees = 0f,
+                                    stops = listOf(
+                                        KeyboardGradientStop(0f, Color(0xFF151A2C)),
+                                        KeyboardGradientStop(1f, Color(0xFFB5D8FF)),
+                                    ),
                                 ),
                             )
-                        },
-                        label = {
-                            Text(if (preset == BackdropPreset.BIRDIE_RAINBOW) "Birdie Rainbow" else "Sinebow")
                         },
                     )
                 }
@@ -237,6 +298,36 @@ private fun SurfaceThemeSection(
                     ),
                 )
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = saveName,
+                    onValueChange = { saveName = it },
+                    label = { Text("Gradient name") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                Button(
+                    enabled = saveName.isNotBlank(),
+                    onClick = {
+                        val saved = GradientLibrary.saveCustom(
+                            context,
+                            SavedGradient(
+                                id = "",
+                                name = saveName.trim(),
+                                angleDegrees = state.angleDegrees,
+                                stops = state.stops,
+                            ),
+                        )
+                        selectedName = saved.name
+                        saveName = ""
+                        gradients = GradientLibrary.load(context)
+                    },
+                ) { Text("Save") }
+            }
+            Text(
+                "Saved gradients use portable Keywi JSON; import/export controls are the next library action.",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

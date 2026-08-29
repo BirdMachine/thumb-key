@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -33,6 +35,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
+import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarThemePreferences
 import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme
 import com.dessalines.thumbkey.utils.KeyboardPosition
@@ -78,6 +81,15 @@ class ComposeKeyboardView(
                                     )
                                 }
                                 SuggestionBarV2(ctx)
+                                val toolbarBorderWidth = ToolbarBorderPreferences.loadWidth(ctx)
+                                val toolbarBorderColor = ToolbarBorderPreferences.loadColor(ctx)
+                                if (toolbarBorderWidth > 0f) {
+                                    Canvas(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+                                        val stroke = toolbarBorderWidth.dp.toPx()
+                                        drawLine(toolbarBorderColor, start = androidx.compose.ui.geometry.Offset(0f, stroke / 2f), end = androidx.compose.ui.geometry.Offset(size.width, stroke / 2f), strokeWidth = stroke)
+                                        drawLine(toolbarBorderColor, start = androidx.compose.ui.geometry.Offset(0f, size.height - stroke / 2f), end = androidx.compose.ui.geometry.Offset(size.width, size.height - stroke / 2f), strokeWidth = stroke)
+                                    }
+                                }
                             }
                         }
 

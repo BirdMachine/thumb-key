@@ -12,6 +12,8 @@ private const val KEY_STOPS = "stops"
 private const val KEY_MODE = "mode"
 private const val KEY_OPACITY = "opacity"
 private const val KEY_MEDIA_URI = "media_uri"
+private const val KEY_BORDER_WIDTH = "border_width"
+private const val KEY_BORDER_COLOR = "border_color"
 
 object ToolbarThemePreferences {
     fun load(context: Context): BackdropThemeState {
@@ -91,5 +93,25 @@ object ToolbarThemePreferences {
                     )
                 }.sortedBy { it.position }
         }.getOrNull()?.takeIf { it.isNotEmpty() }
+    }
+}
+
+object ToolbarBorderPreferences {
+    private const val PREFS_NAME = "birdie_toolbar_border"
+    private const val WIDTH = "width"
+    private const val COLOR = "color"
+
+    fun loadWidth(context: Context): Float =
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getFloat(WIDTH, 0.6f)
+
+    fun saveWidth(context: Context, value: Float) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putFloat(WIDTH, value.coerceIn(0f, 4f)).apply()
+    }
+
+    fun loadColor(context: Context): Color =
+        Color(context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getInt(COLOR, Color(0xFFFFC247).toArgb()))
+
+    fun saveColor(context: Context, value: Color) {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putInt(COLOR, value.toArgb()).apply()
     }
 }
