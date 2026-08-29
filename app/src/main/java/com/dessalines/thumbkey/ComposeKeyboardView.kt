@@ -19,6 +19,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.zIndex
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.AbstractComposeView
@@ -74,7 +76,14 @@ class ComposeKeyboardView(
                 MaterialTheme(colorScheme = keyboardColorScheme) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         if (keywiEnabled) {
-                            Box(modifier = Modifier.fillMaxWidth().height(42.dp)) {
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(42.dp)
+                                        .clipToBounds()
+                                        .zIndex(1f),
+                            ) {
                                 if (toolbarBackdrop.mode != BackdropMode.NONE) {
                                     BackdropVisualLayer(
                                         state = toolbarBackdrop,
@@ -126,6 +135,8 @@ class ComposeKeyboardView(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
+                                    .clipToBounds()
+                                    .zIndex(0f)
                                     .onSizeChanged { size ->
                                         if (size.height != keyboardHeightPx) {
                                             keyboardHeightPx = size.height
