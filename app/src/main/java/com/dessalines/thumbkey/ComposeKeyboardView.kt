@@ -8,6 +8,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -18,6 +19,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -31,6 +33,8 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
+import com.dessalines.thumbkey.fishwi.FishwiAquarium
+import com.dessalines.thumbkey.fishwi.fishwiInputObserver
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
@@ -98,28 +102,14 @@ class ComposeKeyboardView(
                                         val stroke = toolbarBorderWidth.coerceAtLeast(1f)
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry
-                                                    .Offset(0f, stroke / 2f),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    0f,
-                                                    size.height - stroke / 2f,
-                                                ),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    size.height - stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, size.height - stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, size.height - stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                     }
@@ -137,6 +127,7 @@ class ComposeKeyboardView(
                                     .fillMaxWidth()
                                     .clipToBounds()
                                     .zIndex(0f)
+                                    .fishwiInputObserver()
                                     .onSizeChanged { size ->
                                         if (size.height != keyboardHeightPx) {
                                             keyboardHeightPx = size.height
@@ -155,6 +146,31 @@ class ComposeKeyboardView(
                                         Modifier
                                             .fillMaxWidth()
                                             .height(with(density) { keyboardHeightPx.toDp() }),
+                                )
+                            }
+
+                            val keyboardPosition =
+                                KeyboardPosition.entries.getOrElse(settings?.position ?: KeyboardPosition.Center.ordinal) {
+                                    KeyboardPosition.Center
+                                }
+
+                            // Fishwi deliberately occupies only the otherwise-unused side gutter. The normal
+                            // keyboard remains untouched and can keep following Keywi upstream changes.
+                            if (keywiEnabled && keyboardPosition == KeyboardPosition.Right) {
+                                FishwiAquarium(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.CenterStart)
+                                            .fillMaxWidth(0.34f)
+                                            .fillMaxHeight(),
+                                )
+                            } else if (keywiEnabled && keyboardPosition == KeyboardPosition.Left) {
+                                FishwiAquarium(
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .fillMaxWidth(0.34f)
+                                            .fillMaxHeight(),
                                 )
                             }
 
