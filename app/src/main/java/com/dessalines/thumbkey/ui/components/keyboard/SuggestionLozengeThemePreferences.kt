@@ -30,6 +30,7 @@ object SuggestionLozengeThemePreferences {
 
     fun load(context: Context): SuggestionLozengeThemeState {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val defaults = SuggestionLozengeThemeState()
         return SuggestionLozengeThemeState(
             surfaceStyle =
                 enumValue(
@@ -37,14 +38,14 @@ object SuggestionLozengeThemePreferences {
                     SuggestionLozengeSurfaceStyle.SOLID,
                 ),
             surfaceGradient = readGradient(prefs, "surface", BIRDIE_KEY_GRADIENT),
-            surfaceColor = Color(prefs.getLong("surface_color", 0xB8343540L).toULong()),
+            surfaceColor = readColor(prefs, "surface_color", defaults.surfaceColor),
             borderStyle =
                 enumValue(
                     prefs.getString("border_style", null),
                     SuggestionLozengeBorderStyle.SOLID,
                 ),
             borderGradient = readGradient(prefs, "border", BIRDIE_GOLD_BORDER),
-            borderColor = Color(prefs.getLong("border_color", 0x70FFFFFFL).toULong()),
+            borderColor = readColor(prefs, "border_color", defaults.borderColor),
             borderWidth = prefs.getFloat("border_width", 1f).coerceIn(0f, 6f),
         )
     }
@@ -66,6 +67,15 @@ object SuggestionLozengeThemePreferences {
                 putFloat("border_width", state.borderWidth.coerceIn(0f, 6f))
             }.apply()
     }
+
+    private fun readColor(
+        prefs: android.content.SharedPreferences,
+        key: String,
+        fallback: Color,
+    ): Color =
+        runCatching {
+            Color(prefs.getLong(key, fallback.value.toLong()).toULong())
+        }.getOrDefault(fallback)
 
     private fun readGradient(
         prefs: android.content.SharedPreferences,
