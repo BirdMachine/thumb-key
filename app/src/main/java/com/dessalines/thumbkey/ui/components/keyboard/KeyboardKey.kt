@@ -151,7 +151,8 @@ fun KeyboardKey(
     counterclockwiseDragAction: CircularDragAction,
     slideHoldEnabled: Boolean,
     keyGradient: KeyboardBackdrop? = null,
-    keyBorderGradient: KeyboardBackdrop? = BIRDIE_GOLD_BORDER,
+    keyBorderGradient: KeyboardBackdrop? =
+        if (KeywiAppearancePreferences.currentEnabled) BIRDIE_GOLD_BORDER else null,
     keyGradientCanvasWidth: Float = 0f,
     keyGradientCanvasHeight: Float = 0f,
     keyGradientOffsetX: Float = 0f,

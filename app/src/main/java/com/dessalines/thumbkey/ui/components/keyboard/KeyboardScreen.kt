@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.emoji2.emojipicker.EmojiPickerView
-import com.dessalines.thumbkey.BuildConfig
 import com.dessalines.thumbkey.IMEService
 import com.dessalines.thumbkey.R
 import com.dessalines.thumbkey.db.AppSettings
@@ -200,7 +199,9 @@ fun KeyboardScreen(
     val soundOnTap = (settings?.soundOnTap ?: DEFAULT_SOUND_ON_TAP).toBool()
     val hideLetters = (settings?.hideLetters ?: DEFAULT_HIDE_LETTERS).toBool()
     val hideSymbols = (settings?.hideSymbols ?: DEFAULT_HIDE_SYMBOLS).toBool()
-    val backdropEnabled = (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
+    val keywiEnabled = KeywiAppearancePreferences.load(ctx)
+    val backdropEnabled =
+        keywiEnabled && (settings?.backdropEnabled ?: DEFAULT_BACKDROP_ENABLED).toBool()
     val backdropGradient = BackdropThemePreferences.load(ctx).toBackdrop()
     val backdropPadding = 6.dp
     val keyPadding = settings?.keyPadding ?: DEFAULT_KEY_PADDING
@@ -628,7 +629,7 @@ fun KeyboardScreen(
         val gradientCanvasWidth =
             keyboard.arr.maxOfOrNull { row -> row.sumOf { key -> (key.widthMultiplier * keyWidth).toDouble() }.toFloat() } ?: keyWidth
         val gradientCanvasHeight = keyboard.arr.size * keyHeight
-        val keyGradient = if (BuildConfig.DEBUG) BIRDIE_KEY_GRADIENT else null
+        val keyGradient = if (keywiEnabled) BIRDIE_KEY_GRADIENT else null
 
         val drawKeyboard = @Composable { alignment: Alignment, drawBackdrop: Boolean, positionPaddingValue: Int ->
             val modifierPositionPadding =
