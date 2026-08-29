@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#071A24"
+        android:pathData="M8,8H100V100H8Z" />
+    <path
+        android:fillColor="#0B3442"
+        android:pathData="M8,62H100V100H8Z" />
+    <path
+        android:fillColor="#146B73"
+        android:pathData="M8,74H100V100H8Z" />
+
+    <!-- Dot: rosy pixel fish -->
+    <path
+        android:fillColor="#F58FA8"
+        android:pathData="M20,30H28V34H36V38H44V46H36V50H28V46H20V42H16V38H20Z" />
+    <path
+        android:fillColor="#FFD9E2"
+        android:pathData="M28,34H36V38H40V42H36V46H28Z" />
+    <path
+        android:fillColor="#F58FA8"
+        android:pathData="M16,34H12V30H8V42H12V38H16Z" />
+    <path
+        android:fillColor="#06151C"
+        android:pathData="M36,38H40V42H36Z" />
+
+    <!-- Miso: orange pixel fish -->
+    <path
+        android:fillColor="#F0A33A"
+        android:pathData="M56,55H64V51H72V47H84V51H88V59H84V63H72V59H64V63H56V59H52V55H56Z" />
+    <path
+        android:fillColor="#FFE3A5"
+        android:pathData="M68,51H80V55H84V59H72V55H68Z" />
+    <path
+        android:fillColor="#F0A33A"
+        android:pathData="M52,51H48V47H44V63H48V59H52Z" />
+    <path
+        android:fillColor="#06151C"
+        android:pathData="M80,51H84V55H80Z" />
+
+    <!-- Pixel bubbles -->
+    <path
+        android:fillColor="#9BEAF2"
+        android:pathData="M73,20H79V26H73ZM84,29H88V33H84ZM58,24H62V28H58Z" />
+
+    <!-- Tiny keyboard tiles at the bottom -->
+    <path
+        android:fillColor="#D5F7F5"
+        android:pathData="M22,82H30V90H22ZM32,82H40V90H32ZM42,82H50V90H42ZM52,82H60V90H52ZM62,82H70V90H62ZM72,82H80V90H72ZM32,92H66V98H32Z" />
+    <path
+        android:fillColor="#2A5960"
+        android:pathData="M24,84H28V88H24ZM34,84H38V88H34ZM44,84H48V88H44ZM54,84H58V88H54ZM64,84H68V88H64ZM74,84H78V88H74Z" />
+</vector>
