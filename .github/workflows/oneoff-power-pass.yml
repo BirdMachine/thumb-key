@@ -1,0 +1,122 @@
+name: One-off Keywi power pass
+
+on:
+  push:
+    branches:
+      - birdie/gradient-backgrounds
+
+permissions:
+  contents: write
+
+jobs:
+  implement:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v6
+      - name: Apply power-aware rendering and animation gates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              s = p.read_text()
+              if old not in s:
+                  raise SystemExit(f'Missing expected text in {path}: {old[:80]!r}')
+              p.write_text(s.replace(old, new, count))
+
+          # Main menu entry.
+          path = 'app/src/main/java/com/dessalines/thumbkey/ui/components/settings/SettingsScreen.kt'
+          replace(path,
+              'import androidx.compose.material.icons.outlined.AutoAwesome\n',
+              'import androidx.compose.material.icons.outlined.AutoAwesome\nimport androidx.compose.material.icons.outlined.BatterySaver\n')
+          replace(path,
+              '''                    Preference(\n                        title = { Text(stringResource(R.string.behavior)) },''',
+              '''                    Preference(\n                        title = { Text("Advanced Power Options") },\n                        summary = { Text("Unbridled, Conserved, and Restricted power profiles") },\n                        icon = {\n                            Icon(\n                                imageVector = Icons.Outlined.BatterySaver,\n                                contentDescription = null,\n                            )\n                        },\n                        onClick = { navController.navigate("advancedPowerOptions") },\n                    )\n                    Preference(\n                        title = { Text(stringResource(R.string.behavior)) },''')
+
+          # Navigation route + disable settings transitions in Restricted.
+          path = 'app/src/main/java/com/dessalines/thumbkey/MainActivity.kt'
+          replace(path,
+              'import com.dessalines.thumbkey.ui.components.settings.other.OtherSettingsScreen\n',
+              'import com.dessalines.thumbkey.ui.components.settings.other.OtherSettingsScreen\nimport com.dessalines.thumbkey.ui.components.settings.power.AdvancedPowerOptionsScreen\n')
+          replace(path,
+              'import com.dessalines.thumbkey.ui.theme.ThumbkeyTheme\n',
+              'import com.dessalines.thumbkey.ui.components.keyboard.KeywiPowerMode\nimport com.dessalines.thumbkey.ui.components.keyboard.KeywiPowerPreferences\nimport com.dessalines.thumbkey.ui.theme.ThumbkeyTheme\n')
+          replace(path,
+              '            val imeNames = ctx.getImeNames()\n',
+              '            val imeNames = ctx.getImeNames()\n            val powerMode = KeywiPowerPreferences.load(ctx)\n            val navigationAnimationSpeed = if (powerMode == KeywiPowerMode.RESTRICTED) 1 else ANIMATION_SPEED\n')
+          p = Path(path)
+          s = p.read_text().replace('tween(ANIMATION_SPEED)', 'tween(navigationAnimationSpeed)')
+          p.write_text(s)
+          replace(path,
+              '''                    composable(route = "behavior") {''',
+              '''                    composable(route = "advancedPowerOptions") {\n                        AdvancedPowerOptionsScreen(navController = navController)\n                    }\n                    composable(route = "behavior") {''')
+
+          # GIF lifecycle: don't start during decode, gate playback by power mode,
+          # and always stop animated drawables when the layer leaves composition.
+          path = 'app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/BackdropVisualLayer.kt'
+          replace(path,
+              'import androidx.compose.runtime.Composable\nimport androidx.compose.runtime.remember\n',
+              'import androidx.compose.runtime.Composable\nimport androidx.compose.runtime.DisposableEffect\nimport androidx.compose.runtime.remember\n')
+          replace(path,
+              '''    return ImageDecoder.decodeDrawable(source).also { drawable ->\n        if (drawable is AnimatedImageDrawable) {\n            drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE\n            drawable.start()\n        }\n    }''',
+              '''    return ImageDecoder.decodeDrawable(source).also { drawable ->\n        if (drawable is AnimatedImageDrawable) {\n            drawable.repeatCount = AnimatedImageDrawable.REPEAT_INFINITE\n        }\n    }''')
+          replace(path,
+              '''            val context = LocalContext.current\n            val uri = state.mediaUri?.let(Uri::parse)''',
+              '''            val context = LocalContext.current\n            val gifsEnabled = KeywiPowerPreferences.gifsEnabled(context)\n            val uri = state.mediaUri?.let(Uri::parse)''')
+          replace(path,
+              '''            AndroidView(''',
+              '''            DisposableEffect(decodedDrawable, gifsEnabled) {\n                val animated = decodedDrawable as? AnimatedImageDrawable\n                if (animated != null) {\n                    if (gifsEnabled) animated.start() else animated.stop()\n                }\n                onDispose { animated?.stop() }\n            }\n\n            AndroidView(''')
+
+          # Suggestion bar: Restricted disables spring/gooey animation; power modes
+          # set refresh cadence instead of a hard-coded 80 ms loop.
+          path = 'app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt'
+          replace(path,
+              '''    val motionStyle = remember { SuggestionMotionPreferences.load(ime) }''',
+              '''    val configuredMotionStyle = remember { SuggestionMotionPreferences.load(ime) }''')
+          replace(path,
+              '''            newWordHighlightColor = AdvancedKeyWordPreferences.newWordHighlightColor(ime)\n            val beforeCursor =''',
+              '''            newWordHighlightColor = AdvancedKeyWordPreferences.newWordHighlightColor(ime)\n            val powerMode = KeywiPowerPreferences.load(ime)\n            val motionStyle =\n                if (powerMode == KeywiPowerMode.RESTRICTED) {\n                    SuggestionMotionStyle.NONE\n                } else {\n                    configuredMotionStyle\n                }\n            val beforeCursor =''')
+          # motionStyle is needed in composition outside the polling loop too.
+          replace(path,
+              '''    val orderedSuggestions =''',
+              '''    val motionStyle =\n        if (KeywiPowerPreferences.animationsEnabled(ime)) {\n            configuredMotionStyle\n        } else {\n            SuggestionMotionStyle.NONE\n        }\n\n    val orderedSuggestions =''')
+          replace(path, '            delay(80)\n', '            delay(KeywiPowerPreferences.suggestionPollMillis(ime))\n')
+
+          # Key release flourish is cosmetic; turn it off entirely in Restricted.
+          path = 'app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/KeyboardKey.kt'
+          replace(path,
+              '''    val isPasswordField by remember { mutableStateOf(isPasswordField(ime)) }''',
+              '''    val isPasswordField by remember { mutableStateOf(isPasswordField(ime)) }\n    val animationsEnabled = KeywiPowerPreferences.animationsEnabled(ime)''')
+          p = Path(path)
+          s = p.read_text()
+          target = 'visible = releasedKey.value != null && !isPasswordField,'
+          if s.count(target) < 2:
+              raise SystemExit('Expected two key-release animation visibility gates')
+          p.write_text(s.replace(target, 'visible = releasedKey.value != null && !isPasswordField && animationsEnabled,'))
+          PY
+      - name: Format and validate
+        run: |
+          ./gradlew formatKotlin
+          ./gradlew lintKotlin
+          ./gradlew :app:lintDebug
+          ./gradlew :app:assembleDebug
+      - name: Commit power pass
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/dessalines/thumbkey/MainActivity.kt \
+                  app/src/main/java/com/dessalines/thumbkey/ui/components/settings/SettingsScreen.kt \
+                  app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/BackdropVisualLayer.kt \
+                  app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt \
+                  app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/KeyboardKey.kt
+          git commit -m "Add power-aware rendering and animation modes"
+          git push origin HEAD:birdie/gradient-backgrounds
