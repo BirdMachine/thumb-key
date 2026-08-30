@@ -1,0 +1,90 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
+package com.dessalines.thumbkey.keyboards
+
+import com.dessalines.thumbkey.utils.*
+import com.dessalines.thumbkey.utils.ColorVariant.*
+import com.dessalines.thumbkey.utils.FontSizeVariant.*
+import com.dessalines.thumbkey.utils.SwipeNWay.*
+
+val KB_TOK_THUMBKEY_LETTERS_MAIN =
+    KeyboardC(
+        listOf(
+            listOf(
+                KeyItemC(
+                    center = KeyC("s", size = LARGE),
+                    swipeType = FOUR_WAY_DIAGONAL,
+                ),
+                KeyItemC(
+                    center = KeyC("u", size = LARGE),
+                    swipeType = TWO_WAY_VERTICAL,
+                ),
+                KeyItemC(
+                    center = KeyC("o", size = LARGE),
+                    swipeType = FOUR_WAY_DIAGONAL,
+                    bottomLeft = KeyC("j"),
+                ),
+                EMOJI_KEY_ITEM,
+            ),
+            listOf(
+                KeyItemC(
+                    center = KeyC("k", size = LARGE),
+                    swipeType = TWO_WAY_HORIZONTAL,
+                ),
+                KeyItemC(
+                    center = KeyC("n", size = LARGE),
+                    left = KeyC("w"),
+                    right = KeyC("p"),
+                    top = KeyC("t"),
+                    bottom = KeyC("m"),
+                ),
+                KeyItemC(
+                    center = KeyC("a", size = LARGE),
+                    topLeft = KeyC("*", size = SMALLEST, color = MUTED),
+                    top = KeyC(":", size = SMALLEST, color = MUTED),
+                    topRight = KeyC("\"", size = SMALLEST, color = MUTED),
+                    right = KeyC("(", size = SMALLEST, color = MUTED),
+                    bottomRight = KeyC("@", size = SMALLEST, color = MUTED),
+                    bottom = KeyC(",", color = MUTED),
+                    bottomLeft = KeyC("-", size = SMALLEST, color = MUTED),
+                    left = KeyC("/", size = SMALLEST, color = MUTED),
+                ),
+                NUMERIC_KEY_ITEM,
+            ),
+            listOf(
+                KeyItemC(
+                    center = KeyC("l", size = LARGE),
+                    swipeType = FOUR_WAY_DIAGONAL,
+                ),
+                KeyItemC(
+                    center = KeyC("i", size = LARGE),
+                    bottomRight = KeyC("?", color = MUTED),
+                    bottom = KeyC(".", color = MUTED),
+                    bottomLeft = KeyC("!", color = MUTED),
+                ),
+                KeyItemC(
+                    center = KeyC("e", size = LARGE),
+                    swipeType = FOUR_WAY_DIAGONAL,
+                ),
+                BACKSPACE_KEY_ITEM,
+            ),
+            listOf(
+                SPACEBAR_KEY_ITEM,
+                RETURN_KEY_ITEM,
+            ),
+        ),
+    )
+
+val KB_TOK_THUMBKEY_LETTERS: KeyboardDefinition =
+    KeyboardDefinition(
+        title = "toki pona thumb-key letters",
+        modes =
+            KeyboardDefinitionModes(
+                main = KB_TOK_THUMBKEY_LETTERS_MAIN,
+                numeric = NUMERIC_KEYBOARD,
+            ),
+        settings =
+            KeyboardDefinitionSettings(
+                autoCapitalizers = emptyArray(),
+            ),
+    )
