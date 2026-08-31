@@ -14,15 +14,21 @@ kotlin {
     }
 }
 
+val keywiDebugStoreFile = providers.environmentVariable("KEYWI_DEBUG_STORE_FILE").orNull
+val keywiDebugStorePassword = providers.environmentVariable("KEYWI_DEBUG_STORE_PASSWORD").orNull
+val keywiDebugKeyAlias = providers.environmentVariable("KEYWI_DEBUG_KEY_ALIAS").orNull
+val keywiDebugKeyPassword = providers.environmentVariable("KEYWI_DEBUG_KEY_PASSWORD").orNull
+val keywiCiVersionCode = providers.environmentVariable("KEYWI_VERSION_CODE").orNull?.toIntOrNull()
+
 android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.dessalines.thumbkey"
+        applicationId = "com.birdmachine.keywi"
         minSdk = 24
         targetSdk = 36
-        versionCode = 186
-        versionName = "5.1.16"
+        versionCode = keywiCiVersionCode ?: 186
+        versionName = "5.1.16-keywi.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -39,8 +45,24 @@ android {
         includeInBundle = false
     }
 
-    if (project.hasProperty("RELEASE_STORE_FILE")) {
-        signingConfigs {
+    signingConfigs {
+        if (
+            keywiDebugStoreFile != null &&
+            keywiDebugStorePassword != null &&
+            keywiDebugKeyAlias != null &&
+            keywiDebugKeyPassword != null
+        ) {
+            create("keywiDebug") {
+                storeFile = file(keywiDebugStoreFile)
+                storePassword = keywiDebugStorePassword
+                keyAlias = keywiDebugKeyAlias
+                keyPassword = keywiDebugKeyPassword
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+
+        if (project.hasProperty("RELEASE_STORE_FILE")) {
             create("release") {
                 storeFile = file(project.property("RELEASE_STORE_FILE")!!)
                 storePassword = project.property("RELEASE_STORE_PASSWORD") as String?
@@ -53,6 +75,7 @@ android {
             }
         }
     }
+
     buildTypes {
         release {
             if (project.hasProperty("RELEASE_STORE_FILE")) {
@@ -74,6 +97,9 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = " (DEBUG)"
+            if (signingConfigs.names.contains("keywiDebug")) {
+                signingConfig = signingConfigs.getByName("keywiDebug")
+            }
         }
     }
 

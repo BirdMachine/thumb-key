@@ -1,0 +1,57 @@
+name: One-off dictionary token and long-press patch
+
+on:
+  push:
+    branches:
+      - birdie/gradient-backgrounds
+    paths:
+      - .github/workflows/oneoff-dictionary-token-longpress.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: birdie/gradient-backgrounds
+          fetch-depth: 0
+      - name: Patch tokenization, long-press feedback, and formatting
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt')
+          s = p.read_text()
+          s = s.replace('private val WORD_PATTERN_V2 = Regex("[A-Za-z\']+$")', 'private val TOKEN_PATTERN_V2 = Regex("\\\\S+$")\nprivate val SUGGESTION_PREFIX_PATTERN_V2 = Regex("[A-Za-z\']+$")')
+          s = s.replace('    isCurrentWord: Boolean = false,\n    onSuggestionClick: (String) -> Unit,', '    isCurrentWord: Boolean = false,\n    newWordHighlightColor: Color,\n    displayText: String? = null,\n    onSuggestionClick: (String) -> Unit,')
+          s = s.replace('                        text = currentSuggestion,', '                        text = displayText ?: currentSuggestion,')
+          s = s.replace('    var prefix by remember { mutableStateOf("") }\n    var suggestions', '    var currentToken by remember { mutableStateOf("") }\n    var prefix by remember { mutableStateOf("") }\n    var suggestions')
+          s = s.replace('    var newWordHighlightColor by remember { mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(ime)) }', '    var newWordHighlightColor by remember { mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(ime)) }\n    var justAddedWord by remember { mutableStateOf<String?>(null) }')
+          s = s.replace('    LaunchedEffect(enabled, privateField) {', '    LaunchedEffect(justAddedWord) {\n        if (justAddedWord != null) {\n            delay(1100)\n            justAddedWord = null\n        }\n    }\n\n    LaunchedEffect(enabled, privateField) {')
+          s = s.replace('            val nextPrefix = WORD_PATTERN_V2.find(beforeCursor)?.value.orEmpty()\n            if (nextPrefix != prefix) {\n                prefix = nextPrefix\n                suggestions = LocalSuggestionEngineV2.suggest(nextPrefix)\n            }', '            val nextToken = TOKEN_PATTERN_V2.find(beforeCursor)?.value.orEmpty()\n            val nextPrefix = SUGGESTION_PREFIX_PATTERN_V2.find(nextToken)?.value.orEmpty()\n            if (nextToken != currentToken || nextPrefix != prefix) {\n                currentToken = nextToken\n                prefix = nextPrefix\n                suggestions = LocalSuggestionEngineV2.suggest(nextPrefix)\n            }')
+          s = s.replace('            prefix = ""\n            suggestions = emptyList()', '            currentToken = ""\n            prefix = ""\n            suggestions = emptyList()', 1)
+          s = s.replace('    val currentWordVisible = showCurrentWord && prefix.isNotEmpty()\n    val displayed =\n        ((if (currentWordVisible) listOf(prefix) else emptyList()) + orderedSuggestions)', '    val currentWordVisible = showCurrentWord && currentToken.isNotEmpty()\n    val displayed =\n        ((if (currentWordVisible) listOf(currentToken) else emptyList()) + orderedSuggestions)')
+          s = s.replace('                            isCurrentWord = isCurrentWord,\n                            onSuggestionClick', '                            isCurrentWord = isCurrentWord,\n                            newWordHighlightColor = newWordHighlightColor,\n                            displayText =\n                                if (isCurrentWord && justAddedWord == currentToken) {\n                                    "✓ Added"\n                                } else {\n                                    null\n                                },\n                            onSuggestionClick')
+          s = s.replace('                                val currentPrefix = prefix\n                                if (currentPrefix.isNotEmpty()) {\n                                    ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)\n                                    ime.currentInputConnection?.commitText("$suggestion ", 1)\n                                    prefix = ""\n                                    suggestions = emptyList()\n                                }', '                                val replacementLength = if (isCurrentWord) currentToken.length else prefix.length\n                                if (replacementLength > 0) {\n                                    ime.currentInputConnection?.deleteSurroundingText(replacementLength, 0)\n                                    ime.currentInputConnection?.commitText("$suggestion ", 1)\n                                    currentToken = ""\n                                    prefix = ""\n                                    suggestions = emptyList()\n                                }')
+          s = s.replace('                                        }.onSuccess {\n                                            Toast', '                                        }.onSuccess {\n                                            justAddedWord = word\n                                            Toast')
+          p.write_text(s)
+
+          p = Path('app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/AdvancedLookAndFeelScreen.kt')
+          s = p.read_text()
+          s = s.replace('import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode\nimport com.dessalines.thumbkey.ui.components.keyboard.AdvancedKeyWordPreferences', 'import com.dessalines.thumbkey.ui.components.keyboard.AdvancedKeyWordPreferences\nimport com.dessalines.thumbkey.ui.components.keyboard.BackdropMode')
+          p.write_text(s)
+          PY
+          ./gradlew formatKotlin
+          ./gradlew lintKotlin lintDebug assembleDebug
+      - name: Commit patch
+        shell: bash
+        run: |
+          git config user.name 'BirdMachine Build Bot'
+          git config user.email 'actions@github.com'
+          git add app/src/main/java/com/dessalines/thumbkey/ui/components/keyboard/SuggestionBarV2.kt app/src/main/java/com/dessalines/thumbkey/ui/components/settings/lookandfeel/AdvancedLookAndFeelScreen.kt
+          git commit -m 'Keep symbol-rich words together and improve dictionary long press'
+          git push origin HEAD:birdie/gradient-backgrounds

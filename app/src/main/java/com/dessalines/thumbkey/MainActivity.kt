@@ -29,7 +29,9 @@ import com.dessalines.thumbkey.ui.components.settings.about.AboutScreen
 import com.dessalines.thumbkey.ui.components.settings.backupandrestore.BackupAndRestoreScreen
 import com.dessalines.thumbkey.ui.components.settings.behavior.BehaviorScreen
 import com.dessalines.thumbkey.ui.components.settings.clipboard.ClipboardSettingsScreen
+import com.dessalines.thumbkey.ui.components.settings.lookandfeel.AdvancedLookAndFeelScreen
 import com.dessalines.thumbkey.ui.components.settings.lookandfeel.LookAndFeelScreen
+import com.dessalines.thumbkey.ui.components.settings.modifykeys.AdvancedKeyWordSelectionScreen
 import com.dessalines.thumbkey.ui.components.settings.modifykeys.ModifyKeysScreen
 import com.dessalines.thumbkey.ui.components.settings.other.OtherSettingsScreen
 import com.dessalines.thumbkey.ui.components.setup.SetupScreen
@@ -126,9 +128,7 @@ class MainActivity : AppCompatActivity() {
                         )
                     },
                 ) {
-                    composable(
-                        route = "setup",
-                    ) {
+                    composable(route = "setup") {
                         SetupScreen(
                             navController = navController,
                             thumbkeyEnabled = thumbkeyEnabled,
@@ -145,6 +145,15 @@ class MainActivity : AppCompatActivity() {
                     }
                     composable(route = "lookAndFeel") {
                         LookAndFeelScreen(
+                            navController = navController,
+                            appSettingsViewModel = appSettingsViewModel,
+                        )
+                    }
+                    composable(route = "advancedLookAndFeel") {
+                        AdvancedLookAndFeelScreen(navController = navController)
+                    }
+                    composable(route = "advancedKeyWordSelection") {
+                        AdvancedKeyWordSelectionScreen(
                             navController = navController,
                             appSettingsViewModel = appSettingsViewModel,
                         )
@@ -168,16 +177,10 @@ class MainActivity : AppCompatActivity() {
                             appSettingsViewModel = appSettingsViewModel,
                         )
                     }
-                    composable(
-                        route = "about",
-                    ) {
-                        AboutScreen(
-                            navController = navController,
-                        )
+                    composable(route = "about") {
+                        AboutScreen(navController = navController)
                     }
-                    composable(
-                        route = "backupAndRestore",
-                    ) {
+                    composable(route = "backupAndRestore") {
                         BackupAndRestoreScreen(
                             navController = navController,
                             appSettingsViewModel = appSettingsViewModel,

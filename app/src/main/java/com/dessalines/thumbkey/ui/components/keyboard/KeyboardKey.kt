@@ -150,6 +150,13 @@ fun KeyboardKey(
     clockwiseDragAction: CircularDragAction,
     counterclockwiseDragAction: CircularDragAction,
     slideHoldEnabled: Boolean,
+    keyGradient: KeyboardBackdrop? = null,
+    keyBorderGradient: KeyboardBackdrop? =
+        if (KeywiAppearancePreferences.currentEnabled) BIRDIE_GOLD_BORDER else null,
+    keyGradientCanvasWidth: Float = 0f,
+    keyGradientCanvasHeight: Float = 0f,
+    keyGradientOffsetX: Float = 0f,
+    keyGradientOffsetY: Float = 0f,
 ) {
     // Necessary for swipe settings to get updated correctly
     val id =
@@ -382,16 +389,36 @@ fun KeyboardKey(
             .padding(keyPadding.dp)
             .clip(RoundedCornerShape(keyRadius.dp))
             .then(
-                if (keyBorderWidth > 0.0) {
-                    Modifier.border(
-                        keyBorderWidth.dp,
-                        keyBorderColour,
-                        shape = RoundedCornerShape(keyRadius.dp),
+                if (!(isDragged.value || isPressed) && keyGradient != null) {
+                    Modifier.keyboardGradientSlice(
+                        backdrop = keyGradient,
+                        canvasWidth = keyGradientCanvasWidth,
+                        canvasHeight = keyGradientCanvasHeight,
+                        offsetX = keyGradientOffsetX,
+                        offsetY = keyGradientOffsetY,
                     )
                 } else {
-                    (Modifier)
+                    Modifier.background(color = backgroundColor)
                 },
-            ).background(color = backgroundColor)
+            ).then(
+                if (keyBorderWidth > 0.0) {
+                    if (keyBorderGradient != null) {
+                        Modifier.keyboardGradientBorder(
+                            backdrop = keyBorderGradient,
+                            width = keyBorderWidth.dp,
+                            radius = keyRadius.dp,
+                        )
+                    } else {
+                        Modifier.border(
+                            keyBorderWidth.dp,
+                            keyBorderColour,
+                            shape = RoundedCornerShape(keyRadius.dp),
+                        )
+                    }
+                } else {
+                    Modifier
+                },
+            )
             // Note: pointerInput has a delay when switching keyboards, so you must use this
             .combinedClickable(
                 interactionSource = interactionSource,
