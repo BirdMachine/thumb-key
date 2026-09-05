@@ -81,6 +81,7 @@ val KB_TOK_THUMBKEY_LETTERS: KeyboardDefinition =
         modes =
             KeyboardDefinitionModes(
                 main = KB_TOK_THUMBKEY_LETTERS_MAIN,
+                shifted = KB_TOK_THUMBKEY_LETTERS_MAIN,
                 numeric = NUMERIC_KEYBOARD,
             ),
         settings =
