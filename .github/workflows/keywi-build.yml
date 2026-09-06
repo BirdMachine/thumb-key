@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - "main"
+      - "feature/**"
+  pull_request:
+    branches:
+      - "main"
 
 concurrency:
   group: keywi-ci-${{ github.ref }}
@@ -11,7 +15,7 @@ concurrency:
 
 jobs:
   validate-build:
-    name: Validate, build & release Keywi APK
+    name: Validate & build Keywi APK
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -48,7 +52,7 @@ jobs:
       - name: Build Keywi debug APK
         run: ./gradlew assembleDebug
 
-      - name: Stage release APK
+      - name: Stage APK
         run: |
           mkdir -p release
           cp app/build/outputs/apk/debug/app-debug.apk release/Keywi-latest.apk
@@ -61,6 +65,7 @@ jobs:
           retention-days: 14
 
       - name: Publish GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
