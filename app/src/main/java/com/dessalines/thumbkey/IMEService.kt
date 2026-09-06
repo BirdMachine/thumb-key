@@ -19,6 +19,8 @@ import com.dessalines.thumbkey.db.DEFAULT_CLIPBOARD_HISTORY_ENABLED
 import com.dessalines.thumbkey.db.DEFAULT_DISABLE_FULLSCREEN_EDITOR
 import com.dessalines.thumbkey.db.DEFAULT_SHOW_ON_SCREEN_KEYBOARD
 import com.dessalines.thumbkey.db.DEFAULT_USE_PRIVATE_CLIPBOARD
+import com.dessalines.thumbkey.inputcontext.InputContext
+import com.dessalines.thumbkey.inputcontext.SelectionContext
 import com.dessalines.thumbkey.utils.KeyboardDefinition
 import com.dessalines.thumbkey.utils.KeyboardLayout
 import com.dessalines.thumbkey.utils.TAG
@@ -55,6 +57,8 @@ class IMEService :
     }
 
     var currentKeyboardDefinition: KeyboardDefinition? = null
+    var inputContext: InputContext = InputContext.fromEditorInfo(null)
+        private set
     private var clipboardManager: ThumbKeyClipboardManager? = null
 
     /**
@@ -66,6 +70,7 @@ class IMEService :
         restarting: Boolean,
     ) {
         super.onStartInput(attribute, restarting)
+        inputContext = InputContext.fromEditorInfo(attribute)
         val view = this.setupView()
         this.setInputView(view)
     }
@@ -120,6 +125,15 @@ class IMEService :
 
         selectionStart = cursorAnchorInfo.selectionStart
         selectionEnd = cursorAnchorInfo.selectionEnd
+        inputContext =
+            inputContext.copy(
+                selection =
+                    SelectionContext(
+                        start = selectionStart,
+                        end = selectionEnd,
+                        selectedText = currentInputConnection?.getSelectedText(0)?.toString(),
+                    ),
+            )
     }
 
     override fun onEvaluateInputViewShown(): Boolean {
