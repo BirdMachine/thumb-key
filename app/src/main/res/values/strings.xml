@@ -111,6 +111,15 @@
     <string name="show_toast_on_layout_switch">Show toast on layout switch</string>
     <string name="disable_fullscreen_editor">Disable fullscreen text editor</string>
     <string name="warning_invalid_mode">Mode \"%s\" is not defined for layout \"%s\".</string>
+    <!-- Advanced Input -->
+    <string name="advanced_input">Advanced input</string>
+    <string name="advanced_input_description">Context-aware typing, characters, and transformation tools</string>
+    <string name="context_engine">Context engine</string>
+    <string name="context_engine_description">Field, selection, token, and app-aware input behavior</string>
+    <string name="context_engine_placeholder">Context-aware behavior settings will live here.</string>
+    <string name="advanced_characters">Advanced characters</string>
+    <string name="advanced_characters_description">Unicode, Fancy Text, kaomoji, and character compatibility</string>
+    <string name="advanced_characters_placeholder">Character and Unicode settings will live here.</string>
     <!-- Clipboard History -->
     <string name="clipboard_history">Clipboard history</string>
     <string name="clipboard_history_enabled">Enable clipboard history</string>
