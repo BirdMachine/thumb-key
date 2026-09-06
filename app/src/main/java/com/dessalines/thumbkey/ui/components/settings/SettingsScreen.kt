@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpCenter
 import androidx.compose.material.icons.outlined.AppRegistration
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Info
@@ -153,6 +154,17 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { navController.navigate("behavior") },
+                    )
+                    Preference(
+                        title = { Text(stringResource(R.string.advanced_input)) },
+                        summary = { Text(stringResource(R.string.advanced_input_description)) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedInput") },
                     )
                     Preference(
                         title = { Text(stringResource(R.string.clipboard_history)) },
