@@ -26,6 +26,9 @@ import com.dessalines.thumbkey.db.ClipboardRepository
 import com.dessalines.thumbkey.ui.components.common.ShowChangelog
 import com.dessalines.thumbkey.ui.components.settings.SettingsScreen
 import com.dessalines.thumbkey.ui.components.settings.about.AboutScreen
+import com.dessalines.thumbkey.ui.components.settings.advancedinput.AdvancedCharactersScreen
+import com.dessalines.thumbkey.ui.components.settings.advancedinput.AdvancedInputScreen
+import com.dessalines.thumbkey.ui.components.settings.advancedinput.ContextEngineScreen
 import com.dessalines.thumbkey.ui.components.settings.backupandrestore.BackupAndRestoreScreen
 import com.dessalines.thumbkey.ui.components.settings.behavior.BehaviorScreen
 import com.dessalines.thumbkey.ui.components.settings.clipboard.ClipboardSettingsScreen
@@ -154,6 +157,15 @@ class MainActivity : AppCompatActivity() {
                             navController = navController,
                             appSettingsViewModel = appSettingsViewModel,
                         )
+                    }
+                    composable(route = "advancedInput") {
+                        AdvancedInputScreen(navController = navController)
+                    }
+                    composable(route = "contextEngine") {
+                        ContextEngineScreen()
+                    }
+                    composable(route = "advancedCharacters") {
+                        AdvancedCharactersScreen()
                     }
                     composable(route = "clipboardSettings") {
                         ClipboardSettingsScreen(
