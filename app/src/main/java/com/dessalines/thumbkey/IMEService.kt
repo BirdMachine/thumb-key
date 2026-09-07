@@ -19,6 +19,7 @@ import com.dessalines.thumbkey.db.DEFAULT_CLIPBOARD_HISTORY_ENABLED
 import com.dessalines.thumbkey.db.DEFAULT_DISABLE_FULLSCREEN_EDITOR
 import com.dessalines.thumbkey.db.DEFAULT_SHOW_ON_SCREEN_KEYBOARD
 import com.dessalines.thumbkey.db.DEFAULT_USE_PRIVATE_CLIPBOARD
+import com.dessalines.thumbkey.inputcontext.ContextEnginePreferences
 import com.dessalines.thumbkey.inputcontext.InputContext
 import com.dessalines.thumbkey.inputcontext.SelectionContext
 import com.dessalines.thumbkey.utils.KeyboardDefinition
@@ -70,9 +71,28 @@ class IMEService :
         restarting: Boolean,
     ) {
         super.onStartInput(attribute, restarting)
+
         inputContext = InputContext.fromEditorInfo(attribute)
+        applySmartEnterPolicy(attribute)
+
         val view = this.setupView()
         this.setInputView(view)
+    }
+
+    /**
+     * Thumb-Key's existing IME-complete action already performs a concrete Android editor action
+     * when one exists, and emits Enter when the action is IME_ACTION_NONE. Smart Enter therefore
+     * only needs to normalize multiline fields to the latter so apps cannot accidentally turn a
+     * paragraph break into Send/Done.
+     */
+    private fun applySmartEnterPolicy(attribute: EditorInfo?) {
+        if (attribute == null) return
+
+        val settings = ContextEnginePreferences.load(this)
+        if (!settings.adaptToField || !settings.smartEnter || !inputContext.isMultiLine) return
+
+        attribute.imeOptions =
+            (attribute.imeOptions and EditorInfo.IME_MASK_ACTION.inv()) or EditorInfo.IME_ACTION_NONE
     }
 
     // Lifecycle Methods
