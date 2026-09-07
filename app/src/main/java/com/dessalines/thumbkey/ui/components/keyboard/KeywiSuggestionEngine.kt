@@ -83,17 +83,27 @@ object KeywiSuggestionEngine {
         alphaPrefix: String,
         limit: Int = 5,
     ): List<String> {
+        var preserveStructuredToken = true
         if (context is IMEService) {
             val settings = ContextEnginePreferences.load(context)
             val capabilities = ContextEnginePolicy.evaluate(context.inputContext, settings)
             if (!capabilities.canOfferSuggestions) return emptyList()
+            preserveStructuredToken = capabilities.shouldPreserveStructuredToken
         }
 
         val tokenQuery = token.trim()
         val alphaQuery = alphaPrefix.trim()
         if (tokenQuery.length < 2 && alphaQuery.length < 2) return emptyList()
 
-        val query = if (tokenQuery.any { !it.isLetter() && it != '\'' }) tokenQuery else alphaQuery
+        val structuredToken = tokenQuery.any { !it.isLetter() && it != '\'' }
+        val query =
+            if (preserveStructuredToken && structuredToken) {
+                tokenQuery
+            } else {
+                alphaQuery
+            }
+        if (query.length < 2) return emptyList()
+
         val normalizedQuery = query.lowercase(Locale.US)
         val seen = linkedSetOf<String>()
         val results = mutableListOf<String>()
