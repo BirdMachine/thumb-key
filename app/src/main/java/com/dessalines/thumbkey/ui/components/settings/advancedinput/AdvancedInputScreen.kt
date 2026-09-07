@@ -20,9 +20,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,7 +113,8 @@ fun ContextEngineScreen() {
                 ) {
                     Text("KEYWI // CONTEXT ENGINE", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Keywi now derives a capability profile from each Android text field instead of treating every editor like the same blank box.",
+                        "Keywi now derives a capability profile from each Android text field " +
+                            "instead of treating every editor like the same blank box.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -126,7 +127,9 @@ fun ContextEngineScreen() {
                 ) {
                     ContextSwitchRow(
                         title = "Adapt to text field",
-                        summary = "Use field type, multiline state, IME action, selection, and sensitivity when deciding which features are appropriate.",
+                        summary =
+                            "Use field type, multiline state, IME action, selection, and sensitivity " +
+                                "when deciding which features are appropriate.",
                         checked = adaptToField,
                         onCheckedChange = {
                             adaptToField = it
@@ -145,7 +148,9 @@ fun ContextEngineScreen() {
                     )
                     ContextSwitchRow(
                         title = "Keep @ and . inside structured tokens",
-                        summary = "Treat email addresses, handles, URLs, and dotted identifiers as one working token instead of chopping them at punctuation.",
+                        summary =
+                            "Treat email addresses, handles, URLs, and dotted identifiers as one " +
+                                "working token instead of chopping them at punctuation.",
                         checked = preserveStructuredTokens,
                         enabled = adaptToField,
                         onCheckedChange = {
@@ -162,10 +167,25 @@ fun ContextEngineScreen() {
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text("Capability rules now active", style = MaterialTheme.typography.titleSmall)
-                    Text("• Password fields are treated as sensitive.", style = MaterialTheme.typography.bodySmall)
-                    Text("• Fancy-text/selection transforms are only eligible in editable text fields with a real selection.", style = MaterialTheme.typography.bodySmall)
-                    Text("• Multiline fields can request newline behavior; single-line fields can prefer their Android IME action.", style = MaterialTheme.typography.bodySmall)
-                    Text("• Suggestion eligibility is decided by the same shared policy that Advanced Characters and ✨ Tools will consume.", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "• Password fields are treated as sensitive.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "• Fancy-text/selection transforms are only eligible in editable text fields " +
+                            "with a real selection.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "• Multiline fields can request newline behavior; single-line fields can prefer " +
+                            "their Android IME action.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "• Suggestion eligibility is decided by the same shared policy that " +
+                            "Advanced Characters and ✨ Tools will consume.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                 }
             }
         }
