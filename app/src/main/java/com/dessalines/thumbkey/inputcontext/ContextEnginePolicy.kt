@@ -2,6 +2,12 @@ package com.dessalines.thumbkey.inputcontext
 
 import android.view.inputmethod.EditorInfo
 
+enum class SmartEnterBehavior {
+    NEWLINE,
+    IME_ACTION,
+    LEGACY,
+}
+
 data class InputCapabilities(
     val isSensitive: Boolean,
     val canOfferSuggestions: Boolean,
@@ -9,6 +15,7 @@ data class InputCapabilities(
     val canReplaceSelection: Boolean,
     val supportsNewline: Boolean,
     val prefersImeAction: Boolean,
+    val smartEnterBehavior: SmartEnterBehavior,
     val shouldPreserveStructuredToken: Boolean,
 )
 
@@ -26,6 +33,15 @@ object ContextEnginePolicy {
         val hasExplicitImeAction =
             imeAction != EditorInfo.IME_ACTION_NONE &&
                 imeAction != EditorInfo.IME_ACTION_UNSPECIFIED
+        val supportsNewline = editable && textLike && (!adaptive || context.isMultiLine)
+        val prefersImeAction = adaptive && hasExplicitImeAction && !context.isMultiLine
+        val smartEnterBehavior =
+            when {
+                !settings.smartEnter || !adaptive -> SmartEnterBehavior.LEGACY
+                context.isMultiLine && supportsNewline -> SmartEnterBehavior.NEWLINE
+                prefersImeAction -> SmartEnterBehavior.IME_ACTION
+                else -> SmartEnterBehavior.LEGACY
+            }
 
         return InputCapabilities(
             isSensitive = sensitive,
@@ -35,8 +51,9 @@ object ContextEnginePolicy {
                     !(sensitive && settings.suppressSensitiveSuggestions),
             canTransformSelection = editable && textLike && context.hasSelection && !sensitive,
             canReplaceSelection = editable && context.hasSelection,
-            supportsNewline = editable && textLike && (!adaptive || context.isMultiLine),
-            prefersImeAction = adaptive && hasExplicitImeAction && !context.isMultiLine,
+            supportsNewline = supportsNewline,
+            prefersImeAction = prefersImeAction,
+            smartEnterBehavior = smartEnterBehavior,
             shouldPreserveStructuredToken = adaptive && settings.preserveEmailAndUrlTokens && textLike,
         )
     }
