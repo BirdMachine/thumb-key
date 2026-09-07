@@ -88,6 +88,7 @@ fun ContextEngineScreen() {
     val context = LocalContext.current
     val initial = remember { ContextEnginePreferences.load(context) }
     var adaptToField by remember { mutableStateOf(initial.adaptToField) }
+    var smartEnter by remember { mutableStateOf(initial.smartEnter) }
     var suppressSensitiveSuggestions by remember { mutableStateOf(initial.suppressSensitiveSuggestions) }
     var preserveStructuredTokens by remember { mutableStateOf(initial.preserveEmailAndUrlTokens) }
 
@@ -113,8 +114,8 @@ fun ContextEngineScreen() {
                 ) {
                     Text("KEYWI // CONTEXT ENGINE", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "Keywi now derives a capability profile from each Android text field " +
-                            "instead of treating every editor like the same blank box.",
+                        "Keywi derives a capability profile from each Android text field instead of " +
+                            "treating every editor like the same blank box.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -134,6 +135,18 @@ fun ContextEngineScreen() {
                         onCheckedChange = {
                             adaptToField = it
                             ContextEnginePreferences.setAdaptToField(context, it)
+                        },
+                    )
+                    ContextSwitchRow(
+                        title = "Smart Enter",
+                        summary =
+                            "Use newline in multiline editors and prefer Send, Search, Done, or Next " +
+                                "actions in single-line fields when Android exposes one.",
+                        checked = smartEnter,
+                        enabled = adaptToField,
+                        onCheckedChange = {
+                            smartEnter = it
+                            ContextEnginePreferences.setSmartEnter(context, it)
                         },
                     )
                     ContextSwitchRow(
@@ -172,18 +185,15 @@ fun ContextEngineScreen() {
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "• Fancy-text/selection transforms are only eligible in editable text fields " +
-                            "with a real selection.",
+                        "• Selected-text transforms only appear in editable text fields with a real selection.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "• Multiline fields can request newline behavior; single-line fields can prefer " +
-                            "their Android IME action.",
+                        "• Smart Enter distinguishes multiline newline behavior from single-line IME actions.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
-                        "• Suggestion eligibility is decided by the same shared policy that " +
-                            "Advanced Characters and ✨ Tools will consume.",
+                        "• Suggestions, Advanced Characters, and ✨ Tools all consume the same shared policy.",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
