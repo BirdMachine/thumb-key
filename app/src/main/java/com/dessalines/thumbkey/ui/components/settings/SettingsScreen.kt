@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.HelpCenter
 import androidx.compose.material.icons.outlined.AppRegistration
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Info
@@ -97,6 +98,53 @@ fun SettingsScreen(
                         )
                     }
 
+                    Preference(
+                        title = { Text("Advanced look & feel") },
+                        summary = { Text("Backdrops, toolbar, keys, borders, fonts, and effects") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedLookAndFeel") },
+                    )
+                    Preference(
+                        title = { Text("Advanced Key & Word Selection") },
+                        summary = { Text("Matrix remapper, unfinished-word chip, and personal dictionary") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.KeyboardAlt,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedKeyWordSelection") },
+                    )
+                    Preference(
+                        title = { Text(stringResource(R.string.advanced_input)) },
+                        summary = { Text(stringResource(R.string.advanced_input_description)) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedInput") },
+                    )
+                    Preference(
+                        title = { Text("Advanced Power Options") },
+                        summary = { Text("Balance Keywi's motion, effects, and refresh rate against battery use") },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.BatteryChargingFull,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedPowerOptions") },
+                    )
+
+                    SettingsDivider()
+
                     MultiSelectListPreference(
                         value = layoutsState,
                         values = KeyboardLayout.entries.sortedBy { it.keyboardDefinition.title },
@@ -115,9 +163,7 @@ fun SettingsScreen(
                             )
                         },
                         title = { Text(stringResource(R.string.layouts)) },
-                        summary = {
-                            Text(layoutsState.joinToString(", ") { it.keyboardDefinition.title })
-                        },
+                        summary = { Text(layoutsState.joinToString(", ") { it.keyboardDefinition.title }) },
                     )
                     Preference(
                         title = { Text(stringResource(R.string.look_and_feel)) },
@@ -130,32 +176,6 @@ fun SettingsScreen(
                         onClick = { navController.navigate("lookAndFeel") },
                     )
                     Preference(
-                        title = { Text("Advanced look & feel") },
-                        summary = {
-                            Text("Backdrops, toolbar, keys, borders, fonts, and effects")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { navController.navigate("advancedLookAndFeel") },
-                    )
-                    Preference(
-                        title = { Text("Advanced Key & Word Selection") },
-                        summary = {
-                            Text("Matrix remapper, unfinished-word chip, and personal dictionary")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Outlined.KeyboardAlt,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { navController.navigate("advancedKeyWordSelection") },
-                    )
-                    Preference(
                         title = { Text(stringResource(R.string.behavior)) },
                         icon = {
                             Icon(
@@ -164,17 +184,6 @@ fun SettingsScreen(
                             )
                         },
                         onClick = { navController.navigate("behavior") },
-                    )
-                    Preference(
-                        title = { Text(stringResource(R.string.advanced_input)) },
-                        summary = { Text(stringResource(R.string.advanced_input_description)) },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = { navController.navigate("advancedInput") },
                     )
                     Preference(
                         title = { Text(stringResource(R.string.clipboard_history)) },
