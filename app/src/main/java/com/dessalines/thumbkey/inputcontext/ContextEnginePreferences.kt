@@ -4,6 +4,7 @@ import android.content.Context
 
 data class ContextEngineSettings(
     val adaptToField: Boolean = true,
+    val smartEnter: Boolean = true,
     val suppressSensitiveSuggestions: Boolean = true,
     val preserveEmailAndUrlTokens: Boolean = true,
 )
@@ -11,6 +12,7 @@ data class ContextEngineSettings(
 object ContextEnginePreferences {
     private const val PREFS = "context_engine_preferences"
     private const val ADAPT_TO_FIELD = "adapt_to_field"
+    private const val SMART_ENTER = "smart_enter"
     private const val SUPPRESS_SENSITIVE_SUGGESTIONS = "suppress_sensitive_suggestions"
     private const val PRESERVE_EMAIL_AND_URL_TOKENS = "preserve_email_and_url_tokens"
 
@@ -18,6 +20,7 @@ object ContextEnginePreferences {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return ContextEngineSettings(
             adaptToField = prefs.getBoolean(ADAPT_TO_FIELD, true),
+            smartEnter = prefs.getBoolean(SMART_ENTER, true),
             suppressSensitiveSuggestions = prefs.getBoolean(SUPPRESS_SENSITIVE_SUGGESTIONS, true),
             preserveEmailAndUrlTokens = prefs.getBoolean(PRESERVE_EMAIL_AND_URL_TOKENS, true),
         )
@@ -31,6 +34,17 @@ object ContextEnginePreferences {
             .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(ADAPT_TO_FIELD, enabled)
+            .apply()
+    }
+
+    fun setSmartEnter(
+        context: Context,
+        enabled: Boolean,
+    ) {
+        context
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(SMART_ENTER, enabled)
             .apply()
     }
 
