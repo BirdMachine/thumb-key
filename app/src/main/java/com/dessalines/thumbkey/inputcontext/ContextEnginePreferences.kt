@@ -27,7 +27,8 @@ object ContextEnginePreferences {
         context: Context,
         enabled: Boolean,
     ) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(ADAPT_TO_FIELD, enabled)
             .apply()
@@ -37,7 +38,8 @@ object ContextEnginePreferences {
         context: Context,
         enabled: Boolean,
     ) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(SUPPRESS_SENSITIVE_SUGGESTIONS, enabled)
             .apply()
@@ -47,7 +49,8 @@ object ContextEnginePreferences {
         context: Context,
         enabled: Boolean,
     ) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        context
+            .getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(PRESERVE_EMAIL_AND_URL_TOKENS, enabled)
             .apply()
