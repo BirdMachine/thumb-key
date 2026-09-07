@@ -47,7 +47,9 @@ fun AdvancedPowerOptionsScreen(navController: NavController) {
             ProvidePreferenceTheme {
                 Preference(
                     title = { Text("Unbridled") },
-                    summary = { Text("No Keywi power limits. Full motion, GIF playback, and fastest suggestion refresh.") },
+                    summary = {
+                        Text("No Keywi power limits. Full motion, GIF playback, and fastest suggestion refresh.")
+                    },
                     icon = {
                         RadioButton(
                             selected = selected == KeywiPowerMode.UNBRIDLED,
@@ -58,7 +60,9 @@ fun AdvancedPowerOptionsScreen(navController: NavController) {
                 )
                 Preference(
                     title = { Text("Conserved") },
-                    summary = { Text("Keeps the pretty stuff while reducing background polling and avoiding needless redraw work.") },
+                    summary = {
+                        Text("Keeps the pretty stuff while reducing background polling and avoiding needless redraw work.")
+                    },
                     icon = {
                         RadioButton(
                             selected = selected == KeywiPowerMode.CONSERVED,
@@ -69,7 +73,12 @@ fun AdvancedPowerOptionsScreen(navController: NavController) {
                 )
                 Preference(
                     title = { Text("Restricted") },
-                    summary = { Text("Super low power: GIFs become still images, Keywi animations are disabled, and suggestion polling slows down.") },
+                    summary = {
+                        Text(
+                            "Super low power: GIFs become still images, Keywi animations are disabled, " +
+                                "and suggestion polling slows down.",
+                        )
+                    },
                     icon = {
                         RadioButton(
                             selected = selected == KeywiPowerMode.RESTRICTED,
