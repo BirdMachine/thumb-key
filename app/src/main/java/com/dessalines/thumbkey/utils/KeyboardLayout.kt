@@ -215,6 +215,7 @@ import com.dessalines.thumbkey.keyboards.KB_TH_THUMBKEY
 import com.dessalines.thumbkey.keyboards.KB_TH_THUMBKEY_KHAM_CHUEAM
 import com.dessalines.thumbkey.keyboards.KB_TOK_SITELEN_THUMBKEY_EMOJI
 import com.dessalines.thumbkey.keyboards.KB_TOK_THUMBKEY
+import com.dessalines.thumbkey.keyboards.KB_TOK_THUMBKEY_LETTERS
 import com.dessalines.thumbkey.keyboards.KB_TOK_THUMBKEY_LETTERS_SHIFT
 import com.dessalines.thumbkey.keyboards.KB_TR_ARTI
 import com.dessalines.thumbkey.keyboards.KB_TR_THUMBKEY
@@ -486,4 +487,5 @@ enum class KeyboardLayout(
     RUHyperSpace(KB_RU_HYPER_SPACE), // русский hyper space
     ENThumbKeyShift(KB_EN_THUMBKEY_SHIFT), // english thumb-key shift
     TOKThumbKeyLettersShift(KB_TOK_THUMBKEY_LETTERS_SHIFT), // toki pona thumb-key letters shift
+    TOKThumbKeyLetters(KB_TOK_THUMBKEY_LETTERS), // toki pona thumb-key letters
 }

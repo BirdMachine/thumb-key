@@ -1,0 +1,72 @@
+name: Keywi CI
+
+on:
+  push:
+    branches:
+      - "main"
+
+concurrency:
+  group: keywi-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-build:
+    name: Validate, build & release Keywi APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Install stable Keywi debug signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          cp .github/keywi-debug.keystore "$HOME/.android/debug.keystore"
+          chmod 600 "$HOME/.android/debug.keystore"
+
+      - name: Normalize Kotlin formatting
+        run: ./gradlew formatKotlin
+
+      - name: Check Kotlin formatting
+        run: ./gradlew lintKotlin
+
+      - name: Run Android lint
+        run: ./gradlew lint
+
+      - name: Build Keywi debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Stage release APK
+        run: |
+          mkdir -p release
+          cp app/build/outputs/apk/debug/app-debug.apk release/Keywi-latest.apk
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: keywi-debug
+          path: release/Keywi-latest.apk
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="keywi-build-${GITHUB_RUN_NUMBER}"
+          gh release create "$TAG" release/Keywi-latest.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "Keywi build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated Keywi debug build from main at ${GITHUB_SHA}. Signed with Keywi's stable debug key so future Keywi builds can update this installation in place."
