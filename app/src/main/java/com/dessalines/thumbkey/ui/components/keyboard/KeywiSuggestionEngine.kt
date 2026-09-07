@@ -2,6 +2,9 @@ package com.dessalines.thumbkey.ui.components.keyboard
 
 import android.content.Context
 import android.provider.UserDictionary
+import com.dessalines.thumbkey.IMEService
+import com.dessalines.thumbkey.inputcontext.ContextEnginePolicy
+import com.dessalines.thumbkey.inputcontext.ContextEnginePreferences
 import java.util.Locale
 
 private const val PERSONAL_PREFS = "keywi_personal_dictionary"
@@ -80,6 +83,12 @@ object KeywiSuggestionEngine {
         alphaPrefix: String,
         limit: Int = 5,
     ): List<String> {
+        if (context is IMEService) {
+            val settings = ContextEnginePreferences.load(context)
+            val capabilities = ContextEnginePolicy.evaluate(context.inputContext, settings)
+            if (!capabilities.canOfferSuggestions) return emptyList()
+        }
+
         val tokenQuery = token.trim()
         val alphaQuery = alphaPrefix.trim()
         if (tokenQuery.length < 2 && alphaQuery.length < 2) return emptyList()
