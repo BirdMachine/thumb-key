@@ -1,0 +1,7 @@
+Keywi English frequency word list
+
+Generated from the English frequency data distributed with wordfreq 3.1.1.
+wordfreq: https://github.com/rspeer/wordfreq
+wordfreq software is Apache-2.0; redistributed data includes material under
+Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0).
+See the upstream wordfreq LICENSE and README for source-specific attribution.

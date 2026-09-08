@@ -54,8 +54,8 @@ private const val BAR_HEIGHT_DP = 42
 private const val MOTION_PREFS = "suggestion_motion_preferences"
 private const val MOTION_STYLE = "motion_style"
 private const val MAX_VISIBLE_SUGGESTIONS = 5
-private val WORD_PATTERN_V2 = Regex("[A-Za-z']+$")
-private val MATRIX_WORD_GREEN = Color(0xFF52FF52)
+private val TOKEN_PATTERN_V2 = Regex("\\S+$")
+private val SUGGESTION_PREFIX_PATTERN_V2 = Regex("[A-Za-z']+$")
 
 enum class SuggestionMotionStyle {
     NONE,
@@ -192,6 +192,8 @@ private fun SuggestionLozengeSlot(
     motionStyle: SuggestionMotionStyle,
     theme: SuggestionLozengeThemeState,
     isCurrentWord: Boolean = false,
+    newWordHighlightColor: Color,
+    displayText: String? = null,
     onSuggestionClick: (String) -> Unit,
     onSuggestionLongClick: ((String) -> Unit)? = null,
 ) {
@@ -270,7 +272,7 @@ private fun SuggestionLozengeSlot(
                     shadowElevation = if (isBest) 2.dp else 1.dp,
                     border =
                         if (isCurrentWord) {
-                            BorderStroke(1.dp, MATRIX_WORD_GREEN)
+                            BorderStroke(1.dp, newWordHighlightColor)
                         } else {
                             when (theme.borderStyle) {
                                 SuggestionLozengeBorderStyle.SOLID -> {
@@ -313,12 +315,12 @@ private fun SuggestionLozengeSlot(
                             ),
                 ) {
                     Text(
-                        text = currentSuggestion,
+                        text = displayText ?: currentSuggestion,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         color =
                             if (isCurrentWord) {
-                                MATRIX_WORD_GREEN
+                                newWordHighlightColor
                             } else {
                                 MaterialTheme.colorScheme.onSurface.copy(
                                     alpha = if (isBest) 1f else 0.88f,
@@ -336,12 +338,15 @@ private fun SuggestionLozengeSlot(
 @Composable
 fun SuggestionBarV2(ime: IMEService) {
     var enabled by remember { mutableStateOf(SuggestionPreferences.enabled(ime)) }
+    var currentToken by remember { mutableStateOf("") }
     var prefix by remember { mutableStateOf("") }
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
     var showCurrentWord by remember { mutableStateOf(AdvancedKeyWordPreferences.showCurrentWord(ime)) }
     var longPressAddWord by remember { mutableStateOf(AdvancedKeyWordPreferences.longPressAddWord(ime)) }
     val motionStyle = remember { SuggestionMotionPreferences.load(ime) }
     val lozengeTheme = SuggestionLozengeThemePreferences.load(ime)
+    var newWordHighlightColor by remember { mutableStateOf(AdvancedKeyWordPreferences.newWordHighlightColor(ime)) }
+    var justAddedWord by remember { mutableStateOf<String?>(null) }
 
     val inputType = ime.currentInputEditorInfo?.inputType ?: 0
     val variation = inputType and InputType.TYPE_MASK_VARIATION
@@ -350,23 +355,34 @@ fun SuggestionBarV2(ime: IMEService) {
             variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD ||
             variation == InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD
 
+    LaunchedEffect(justAddedWord) {
+        if (justAddedWord != null) {
+            delay(1100)
+            justAddedWord = null
+        }
+    }
+
     LaunchedEffect(enabled, privateField) {
         while (enabled && !privateField) {
             showCurrentWord = AdvancedKeyWordPreferences.showCurrentWord(ime)
             longPressAddWord = AdvancedKeyWordPreferences.longPressAddWord(ime)
+            newWordHighlightColor = AdvancedKeyWordPreferences.newWordHighlightColor(ime)
             val beforeCursor =
                 ime.currentInputConnection
                     ?.getTextBeforeCursor(64, 0)
                     ?.toString()
                     .orEmpty()
-            val nextPrefix = WORD_PATTERN_V2.find(beforeCursor)?.value.orEmpty()
-            if (nextPrefix != prefix) {
+            val nextToken = TOKEN_PATTERN_V2.find(beforeCursor)?.value.orEmpty()
+            val nextPrefix = SUGGESTION_PREFIX_PATTERN_V2.find(nextToken)?.value.orEmpty()
+            if (nextToken != currentToken || nextPrefix != prefix) {
+                currentToken = nextToken
                 prefix = nextPrefix
-                suggestions = LocalSuggestionEngineV2.suggest(nextPrefix)
+                suggestions = KeywiSuggestionEngine.suggest(ime, nextToken, nextPrefix, MAX_VISIBLE_SUGGESTIONS)
             }
             delay(80)
         }
         if (!enabled || privateField) {
+            currentToken = ""
             prefix = ""
             suggestions = emptyList()
         }
@@ -386,9 +402,9 @@ fun SuggestionBarV2(ime: IMEService) {
                 listOf(suggestions[1], suggestions[0]) + suggestions.drop(2)
             }
         }
-    val currentWordVisible = showCurrentWord && prefix.isNotEmpty()
+    val currentWordVisible = showCurrentWord && currentToken.isNotEmpty()
     val displayed =
-        ((if (currentWordVisible) listOf(prefix) else emptyList()) + orderedSuggestions)
+        ((if (currentWordVisible) listOf(currentToken) else emptyList()) + orderedSuggestions)
             .take(MAX_VISIBLE_SUGGESTIONS)
 
     Surface(
@@ -419,11 +435,19 @@ fun SuggestionBarV2(ime: IMEService) {
                             motionStyle = motionStyle,
                             theme = lozengeTheme,
                             isCurrentWord = isCurrentWord,
+                            newWordHighlightColor = newWordHighlightColor,
+                            displayText =
+                                if (isCurrentWord && justAddedWord == currentToken) {
+                                    "✓ Added"
+                                } else {
+                                    null
+                                },
                             onSuggestionClick = { suggestion ->
-                                val currentPrefix = prefix
-                                if (currentPrefix.isNotEmpty()) {
-                                    ime.currentInputConnection?.deleteSurroundingText(currentPrefix.length, 0)
+                                val replacementLength = if (isCurrentWord) currentToken.length else prefix.length
+                                if (replacementLength > 0) {
+                                    ime.currentInputConnection?.deleteSurroundingText(replacementLength, 0)
                                     ime.currentInputConnection?.commitText("$suggestion ", 1)
+                                    currentToken = ""
                                     prefix = ""
                                     suggestions = emptyList()
                                 }
@@ -440,6 +464,15 @@ fun SuggestionBarV2(ime: IMEService) {
                                                 Locale.getDefault(),
                                             )
                                         }.onSuccess {
+                                            KeywiPersonalDictionary.add(ime, word)
+                                            suggestions =
+                                                KeywiSuggestionEngine.suggest(
+                                                    ime,
+                                                    currentToken,
+                                                    prefix,
+                                                    MAX_VISIBLE_SUGGESTIONS,
+                                                )
+                                            justAddedWord = word
                                             Toast
                                                 .makeText(
                                                     ime,

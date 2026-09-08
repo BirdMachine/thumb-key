@@ -166,6 +166,17 @@ fun SettingsScreen(
                         onClick = { navController.navigate("behavior") },
                     )
                     Preference(
+                        title = { Text(stringResource(R.string.advanced_input)) },
+                        summary = { Text(stringResource(R.string.advanced_input_description)) },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = { navController.navigate("advancedInput") },
+                    )
+                    Preference(
                         title = { Text(stringResource(R.string.clipboard_history)) },
                         icon = {
                             Icon(
