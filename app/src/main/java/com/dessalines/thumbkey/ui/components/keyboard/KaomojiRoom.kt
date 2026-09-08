@@ -15,14 +15,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+
+private const val FAVORITES_CATEGORY = "__favorites__"
+private const val RECENTS_CATEGORY = "__recents__"
 
 @Composable
 fun KaomojiRoom(
@@ -30,10 +35,26 @@ fun KaomojiRoom(
     onBackToLetters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var selectedCategoryId by remember { mutableStateOf(KaomojiLibrary.categories.first().id) }
-    val category =
-        KaomojiLibrary.categories.firstOrNull { it.id == selectedCategoryId }
-            ?: KaomojiLibrary.categories.first()
+    var favorites by remember { mutableStateOf(KaomojiPreferences.loadFavorites(context)) }
+    var recents by remember { mutableStateOf(KaomojiPreferences.loadRecents(context)) }
+
+    val items =
+        when (selectedCategoryId) {
+            FAVORITES_CATEGORY -> KaomojiLibrary.allItems.filter { it.text in favorites }
+            RECENTS_CATEGORY -> recents.mapNotNull { recent -> KaomojiLibrary.allItems.firstOrNull { it.text == recent } }
+            else ->
+                KaomojiLibrary.categories
+                    .firstOrNull { it.id == selectedCategoryId }
+                    ?.items
+                    ?: KaomojiLibrary.categories.first().items
+        }
+
+    fun commit(text: String) {
+        recents = KaomojiPreferences.recordRecent(context, text)
+        onCommit(text)
+    }
 
     Column(
         modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp),
@@ -56,6 +77,14 @@ fun KaomojiRoom(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
+            AssistChip(
+                onClick = { selectedCategoryId = FAVORITES_CATEGORY },
+                label = { Text("★ Favorites") },
+            )
+            AssistChip(
+                onClick = { selectedCategoryId = RECENTS_CATEGORY },
+                label = { Text("↻ Recent") },
+            )
             KaomojiLibrary.categories.forEach { entry ->
                 AssistChip(
                     onClick = { selectedCategoryId = entry.id },
@@ -70,30 +99,58 @@ fun KaomojiRoom(
             }
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 132.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.weight(1f),
-        ) {
-            items(category.items, key = { it.text }) { entry ->
-                Card(onClick = { onCommit(entry.text) }) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 9.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                    ) {
-                        Text(
-                            text = entry.text,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        entry.label?.let { label ->
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+        if (items.isEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text =
+                        if (selectedCategoryId == FAVORITES_CATEGORY) {
+                            "No favorites yet — tap ☆ on a kaomoji to pin it here."
+                        } else {
+                            "Nothing here yet. Your recently used kaomoji will appear here."
+                        },
+                    modifier = Modifier.padding(14.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(minSize = 132.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                items(items, key = { it.text }) { entry ->
+                    Card(onClick = { commit(entry.text) }) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = entry.text,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                TextButton(
+                                    onClick = {
+                                        favorites = KaomojiPreferences.toggleFavorite(context, entry.text)
+                                    },
+                                ) {
+                                    Text(if (entry.text in favorites) "★" else "☆")
+                                }
+                            }
+                            entry.label?.let { label ->
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
