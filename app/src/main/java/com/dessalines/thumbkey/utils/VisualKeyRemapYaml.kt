@@ -69,7 +69,7 @@ private fun KeyboardDefinitionModesSerializable.mode(mode: KeyboardMode): Keyboa
         KeyboardMode.CTRLED -> ctrled
         KeyboardMode.ALTED -> alted
         KeyboardMode.EMOJI -> emoji
-        KeyboardMode.CLIPBOARD -> null
+        KeyboardMode.KAOMOJI, KeyboardMode.CLIPBOARD -> null
     }
 
 private fun KeyboardDefinitionModesSerializable.withMode(
@@ -83,7 +83,7 @@ private fun KeyboardDefinitionModesSerializable.withMode(
         KeyboardMode.CTRLED -> copy(ctrled = keyboard)
         KeyboardMode.ALTED -> copy(alted = keyboard)
         KeyboardMode.EMOJI -> copy(emoji = keyboard)
-        KeyboardMode.CLIPBOARD -> this
+        KeyboardMode.KAOMOJI, KeyboardMode.CLIPBOARD -> this
     }
 
 fun getVisualTextOverride(
