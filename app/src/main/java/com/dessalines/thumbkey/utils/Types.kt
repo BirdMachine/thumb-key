@@ -319,6 +319,7 @@ enum class KeyboardMode {
     SHIFTED,
     NUMERIC,
     EMOJI,
+    KAOMOJI,
     CTRLED,
     ALTED,
     CLIPBOARD,
