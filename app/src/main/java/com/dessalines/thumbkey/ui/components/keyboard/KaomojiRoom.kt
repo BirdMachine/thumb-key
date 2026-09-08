@@ -33,6 +33,7 @@ private const val RECENTS_CATEGORY = "__recents__"
 fun KaomojiRoom(
     onCommit: (String) -> Unit,
     onBackToLetters: () -> Unit,
+    onGoToEmoji: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -68,8 +69,15 @@ fun KaomojiRoom(
                 text = "KEYWI // KAOMOJI",
                 style = MaterialTheme.typography.labelLarge,
             )
-            Button(onClick = onBackToLetters) {
-                Text("ABC")
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                onGoToEmoji?.let { goToEmoji ->
+                    TextButton(onClick = goToEmoji) {
+                        Text("☺")
+                    }
+                }
+                Button(onClick = onBackToLetters) {
+                    Text("ABC")
+                }
             }
         }
 
