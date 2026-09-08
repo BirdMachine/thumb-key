@@ -453,7 +453,9 @@ private fun com.dessalines.thumbkey.utils.KeyboardDefinition.keyboardForMode(mod
             modes.emoji
         }
 
-        KeyboardMode.CLIPBOARD -> {
+        KeyboardMode.KAOMOJI,
+        KeyboardMode.CLIPBOARD,
+        -> {
             null
         }
     }
