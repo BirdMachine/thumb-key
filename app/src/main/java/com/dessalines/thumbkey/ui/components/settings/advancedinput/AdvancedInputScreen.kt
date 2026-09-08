@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.dessalines.thumbkey.R
 import com.dessalines.thumbkey.inputcontext.ContextEnginePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.KaomojiLibrary
+import com.dessalines.thumbkey.ui.components.keyboard.KaomojiPreferences
 import me.zhanghai.compose.preference.Preference
 import me.zhanghai.compose.preference.ProvidePreferenceTheme
 
@@ -180,10 +182,7 @@ fun ContextEngineScreen() {
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text("Capability rules now active", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        "• Password fields are treated as sensitive.",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    Text("• Password fields are treated as sensitive.", style = MaterialTheme.typography.bodySmall)
                     Text(
                         "• Selected-text transforms only appear in editable text fields with a real selection.",
                         style = MaterialTheme.typography.bodySmall,
@@ -230,6 +229,12 @@ private fun ContextSwitchRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedCharactersScreen() {
+    val context = LocalContext.current
+    val favorites = remember { KaomojiPreferences.loadFavorites(context) }
+    val recents = remember { KaomojiPreferences.loadRecents(context) }
+    val categories = KaomojiLibrary.categories
+    val itemCount = KaomojiLibrary.allItems.size
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -237,9 +242,88 @@ fun AdvancedCharactersScreen() {
             )
         },
     ) { padding ->
-        Text(
-            text = stringResource(R.string.advanced_characters_placeholder),
-            modifier = Modifier.padding(padding),
-        )
+        Column(
+            modifier =
+                Modifier
+                    .padding(padding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Card {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("KEYWI // ADVANCED CHARACTERS", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Whole-string palettes, kaomoji, decorative Unicode, and selection transforms live here.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Card {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("Kaomoji Room", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "$itemCount built-in kaomoji across ${categories.size} categories.",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        "★ ${favorites.size} favorites   •   ↻ ${recents.size} recent",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        categories.joinToString("   ") { "${it.glyph} ${it.title}" },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "The keyboard-side room already supports category browsing, tap-to-insert, favorites, and recents. " +
+                            "The ABC → Emoji → Kaomoji cycle is the active integration milestone.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Card {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("Unicode / Fancy Text", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "𝕓𝕠𝕝𝕕  𝔉𝔯𝔞𝔨𝔱𝔲𝔯  𝓼𝓬𝓻𝓲𝓹𝓽  ᵗⁱⁿʸ  ｆｕｌｌｗｉｄｔｈ",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Text(
+                        "Selection transforms will quietly expose only styles that can represent the selected text, " +
+                            "with field compatibility decided by the Context Engine.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+
+            Card {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text("String palettes", style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        "The same palette model is intentionally reusable for custom snippets, macros, decorative Unicode, " +
+                            "ASCII-art chunks, and future optional providers.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        "Next controls here: search, custom entries, long-press alternates, and palette management.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        }
     }
 }
