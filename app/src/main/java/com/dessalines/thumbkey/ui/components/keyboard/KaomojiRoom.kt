@@ -14,6 +14,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,18 +39,23 @@ fun KaomojiRoom(
 ) {
     val context = LocalContext.current
     var selectedCategoryId by remember { mutableStateOf(KaomojiLibrary.categories.first().id) }
+    var searchQuery by remember { mutableStateOf("") }
     var favorites by remember { mutableStateOf(KaomojiPreferences.loadFavorites(context)) }
     var recents by remember { mutableStateOf(KaomojiPreferences.loadRecents(context)) }
 
     val items =
-        when (selectedCategoryId) {
-            FAVORITES_CATEGORY -> KaomojiLibrary.allItems.filter { it.text in favorites }
-            RECENTS_CATEGORY -> recents.mapNotNull { recent -> KaomojiLibrary.allItems.firstOrNull { it.text == recent } }
-            else ->
-                KaomojiLibrary.categories
-                    .firstOrNull { it.id == selectedCategoryId }
-                    ?.items
-                    ?: KaomojiLibrary.categories.first().items
+        if (searchQuery.isNotBlank()) {
+            KaomojiLibrary.search(searchQuery).distinctBy { it.text }
+        } else {
+            when (selectedCategoryId) {
+                FAVORITES_CATEGORY -> KaomojiLibrary.allItems.filter { it.text in favorites }
+                RECENTS_CATEGORY -> recents.mapNotNull { recent -> KaomojiLibrary.allItems.firstOrNull { it.text == recent } }
+                else ->
+                    KaomojiLibrary.categories
+                        .firstOrNull { it.id == selectedCategoryId }
+                        ?.items
+                        ?: KaomojiLibrary.categories.first().items
+            }
         }
 
     fun commit(text: String) {
@@ -66,7 +72,7 @@ fun KaomojiRoom(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "KEYWI // KAOMOJI",
+                text = "KEYWI // KAOMOJI PALETTE",
                 style = MaterialTheme.typography.labelLarge,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -76,26 +82,43 @@ fun KaomojiRoom(
                     }
                 }
                 Button(onClick = onBackToLetters) {
-                    Text("ABC")
+                    Text("✕")
                 }
             }
         }
+
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search kaomoji — happy, bird, shrug, chaos…") },
+            singleLine = true,
+        )
 
         Row(
             modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             AssistChip(
-                onClick = { selectedCategoryId = FAVORITES_CATEGORY },
+                onClick = {
+                    searchQuery = ""
+                    selectedCategoryId = FAVORITES_CATEGORY
+                },
                 label = { Text("★ Favorites") },
             )
             AssistChip(
-                onClick = { selectedCategoryId = RECENTS_CATEGORY },
+                onClick = {
+                    searchQuery = ""
+                    selectedCategoryId = RECENTS_CATEGORY
+                },
                 label = { Text("↻ Recent") },
             )
             KaomojiLibrary.categories.forEach { entry ->
                 AssistChip(
-                    onClick = { selectedCategoryId = entry.id },
+                    onClick = {
+                        searchQuery = ""
+                        selectedCategoryId = entry.id
+                    },
                     label = {
                         Text(
                             text = "${entry.glyph} ${entry.title}",
@@ -111,10 +134,10 @@ fun KaomojiRoom(
             Card(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text =
-                        if (selectedCategoryId == FAVORITES_CATEGORY) {
-                            "No favorites yet — tap ☆ on a kaomoji to pin it here."
-                        } else {
-                            "Nothing here yet. Your recently used kaomoji will appear here."
+                        when {
+                            searchQuery.isNotBlank() -> "No kaomoji match “$searchQuery”."
+                            selectedCategoryId == FAVORITES_CATEGORY -> "No favorites yet — tap ☆ on a kaomoji to pin it here."
+                            else -> "Nothing here yet. Your recently used kaomoji will appear here."
                         },
                     modifier = Modifier.padding(14.dp),
                     style = MaterialTheme.typography.bodyMedium,
