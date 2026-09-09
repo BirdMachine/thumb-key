@@ -11,6 +11,7 @@ enum class SmartEnterBehavior {
 data class InputCapabilities(
     val isSensitive: Boolean,
     val canOfferSuggestions: Boolean,
+    val canOfferInputPalettes: Boolean,
     val canTransformSelection: Boolean,
     val canReplaceSelection: Boolean,
     val supportsNewline: Boolean,
@@ -54,6 +55,7 @@ object ContextEnginePolicy {
                 editable &&
                     textLike &&
                     !(sensitive && settings.suppressSensitiveSuggestions),
+            canOfferInputPalettes = editable && textLike && !sensitive,
             canTransformSelection = editable && textLike && context.hasSelection && !sensitive,
             canReplaceSelection = editable && context.hasSelection,
             supportsNewline = supportsNewline,
