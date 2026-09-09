@@ -356,7 +356,7 @@ fun KeyboardScreen(
                                                 KeyboardMode.MAIN
                                             }
                                     },
-                                    onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.MAIN },
+                                    onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.KAOMOJI },
                                     onToggleClipboardMode = { enable -> mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN },
                                     onToggleCapsLock = {
                                         capsLock = !capsLock
@@ -509,7 +509,7 @@ fun KeyboardScreen(
                                                 KeyboardMode.MAIN
                                             }
                                     },
-                                    onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.MAIN },
+                                    onToggleEmojiMode = { enable -> mode = if (enable) KeyboardMode.EMOJI else KeyboardMode.KAOMOJI },
                                     onToggleClipboardMode = { enable -> mode = if (enable) KeyboardMode.CLIPBOARD else KeyboardMode.MAIN },
                                     onToggleCapsLock = {
                                         capsLock = !capsLock
@@ -567,6 +567,45 @@ fun KeyboardScreen(
                     }
                 }
             }
+        }
+    } else if (mode == KeyboardMode.KAOMOJI) {
+        val rowCount = keyboardDefinition.modes.main.arr.size
+        val keyboardHeight = Dp(keyHeight * rowCount)
+        val view = LocalView.current
+        val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        ctx.currentInputConnection.requestCursorUpdates(0)
+        Box(
+            modifier = Modifier.then(if (backdropEnabled) Modifier.keyboardGradientBackground(backdropGradient) else Modifier),
+        ) {
+            if (backdropEnabled) {
+                Box(
+                    modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(color = MaterialTheme.colorScheme.surfaceVariant),
+                )
+            }
+            KaomojiRoom(
+                onCommit = { text ->
+                    if (vibrateOnTap) view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    if (soundOnTap) audioManager.playSoundEffect(AudioManager.FX_KEY_CLICK, .1f)
+                    ctx.currentInputConnection.commitText(text, 1)
+                },
+                onBackToLetters = {
+                    capsLock = false
+                    mode = KeyboardMode.MAIN
+                },
+                onGoToEmoji = { mode = KeyboardMode.EMOJI },
+                modifier =
+                    Modifier
+                        .then(if (!ignoreBottomPadding) Modifier.safeDrawingPadding() else Modifier)
+                        .padding(bottom = pushupSizeDp)
+                        .fillMaxWidth()
+                        .height(keyboardHeight)
+                        .then(if (backdropEnabled) Modifier.padding(top = backdropPadding) else Modifier),
+            )
         }
     } else if (mode == KeyboardMode.CLIPBOARD) {
         val scope = CoroutineScope(Dispatchers.IO)
