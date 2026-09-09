@@ -25,13 +25,18 @@ object ContextEnginePolicy {
         settings: ContextEngineSettings = ContextEngineSettings(),
     ): InputCapabilities {
         val adaptive = settings.adaptToField
-        val sensitive = adaptive && context.isPassword
+        // Sensitivity is a safety property of the host field, not an adaptive convenience.
+        // Keep password-style fields sensitive even when field adaptation is disabled.
+        val sensitive = context.isPassword
         val editable = !context.isReadOnly
         val textLike = context.fieldKind == FieldKind.TEXT
 
         val imeAction = context.imeOptions and EditorInfo.IME_MASK_ACTION
+        val enterActionDisabled =
+            context.imeOptions and EditorInfo.IME_FLAG_NO_ENTER_ACTION != 0
         val hasExplicitImeAction =
-            imeAction != EditorInfo.IME_ACTION_NONE &&
+            !enterActionDisabled &&
+                imeAction != EditorInfo.IME_ACTION_NONE &&
                 imeAction != EditorInfo.IME_ACTION_UNSPECIFIED
         val supportsNewline = editable && textLike && (!adaptive || context.isMultiLine)
         val prefersImeAction = adaptive && hasExplicitImeAction && !context.isMultiLine
