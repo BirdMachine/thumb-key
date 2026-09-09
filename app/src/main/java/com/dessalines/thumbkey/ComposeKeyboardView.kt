@@ -10,14 +10,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -31,9 +37,13 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
+import com.dessalines.thumbkey.db.DEFAULT_SOUND_ON_TAP
+import com.dessalines.thumbkey.db.DEFAULT_VIBRATE_ON_TAP
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
+import com.dessalines.thumbkey.ui.components.keyboard.ExpandedInputPaletteHost
+import com.dessalines.thumbkey.ui.components.keyboard.InputPalette
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
@@ -71,6 +81,7 @@ class ComposeKeyboardView(
                 }
             val density = LocalDensity.current
             var keyboardHeightPx by remember { mutableIntStateOf(0) }
+            var activePalette by remember { mutableStateOf<InputPalette?>(null) }
 
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 MaterialTheme(colorScheme = keyboardColorScheme) {
@@ -91,6 +102,30 @@ class ComposeKeyboardView(
                                     )
                                 }
                                 SuggestionBarV2(ctx)
+                                Surface(
+                                    onClick = {
+                                        activePalette =
+                                            if (activePalette == InputPalette.KAOMOJI) {
+                                                null
+                                            } else {
+                                                InputPalette.KAOMOJI
+                                            }
+                                    },
+                                    shape = RoundedCornerShape(18.dp),
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+                                    tonalElevation = 2.dp,
+                                    shadowElevation = 1.dp,
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .padding(end = 48.dp)
+                                            .zIndex(3f),
+                                ) {
+                                    Text(
+                                        text = "☺",
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    )
+                                }
                                 val toolbarBorderWidth = ToolbarBorderPreferences.loadWidth(ctx)
                                 val toolbarBorderColor = ToolbarBorderPreferences.loadColor(ctx)
                                 if (toolbarBorderWidth > 0f) {
@@ -227,6 +262,20 @@ class ComposeKeyboardView(
                                     context.startActivity(intent)
                                 },
                             )
+
+                            activePalette?.let { palette ->
+                                ExpandedInputPaletteHost(
+                                    palette = palette,
+                                    ime = ctx,
+                                    vibrateOnTap = (settings?.vibrateOnTap ?: DEFAULT_VIBRATE_ON_TAP).toBool(),
+                                    soundOnTap = (settings?.soundOnTap ?: DEFAULT_SOUND_ON_TAP).toBool(),
+                                    onDismiss = { activePalette = null },
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .zIndex(5f),
+                                )
+                            }
                         }
                     }
                 }
