@@ -173,7 +173,7 @@ val TOGGLE_EMOJI_MODE_FALSE_KEYC =
     )
 val EMOJI_BACK_KEY_ITEM =
     KeyItemC(
-        center = TOGGLE_EMOJI_MODE_FALSE_KEYC,
+        center = TOGGLE_NUMERIC_MODE_FALSE_KEYC,
         backgroundColor = SURFACE_VARIANT,
     )
 
