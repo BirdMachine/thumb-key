@@ -15,6 +15,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import com.dessalines.thumbkey.IMEService
+import com.dessalines.thumbkey.inputcontext.ContextEnginePolicy
+import com.dessalines.thumbkey.inputcontext.ContextEnginePreferences
 
 /** Browsable input surfaces that are deliberately opened instead of cycled as keyboard modes. */
 enum class InputPalette {
@@ -30,6 +32,13 @@ fun ExpandedInputPaletteHost(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val capabilities =
+        ContextEnginePolicy.evaluate(
+            context = ime.inputContext,
+            settings = ContextEnginePreferences.load(ime),
+        )
+    if (!capabilities.canOfferInputPalettes) return
+
     val configuration = LocalConfiguration.current
     val view = LocalView.current
     val audioManager = ime.getSystemService(Context.AUDIO_SERVICE) as AudioManager
