@@ -3,6 +3,7 @@ package com.dessalines.thumbkey
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.view.MotionEvent
 import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,10 +34,10 @@ import androidx.lifecycle.lifecycleScope
 import com.dessalines.thumbkey.db.AppSettingsRepository
 import com.dessalines.thumbkey.db.ClipboardRepository
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropMode
-import com.dessalines.thumbkey.ui.components.keyboard.BackdropThemePreferences
 import com.dessalines.thumbkey.ui.components.keyboard.BackdropVisualLayer
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.PenguinFluidBackdrop
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarLayoutPreferences
@@ -53,6 +55,37 @@ class ComposeKeyboardView(
     private val settingsRepo: AppSettingsRepository,
     private val clipboardRepo: ClipboardRepository,
 ) : AbstractComposeView(context) {
+    private var penguinTouchX by mutableFloatStateOf(0.5f)
+    private var penguinTouchY by mutableFloatStateOf(0.5f)
+    private var penguinTouchEnergy by mutableFloatStateOf(0f)
+
+    /**
+     * Observe the same MotionEvents the keyboard already receives, but never consume them here.
+     * Penguin gets coordinates; Keywi keeps complete ownership of gesture interpretation.
+     */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val viewWidth = width.toFloat().coerceAtLeast(1f)
+        val viewHeight = height.toFloat().coerceAtLeast(1f)
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_MOVE,
+            MotionEvent.ACTION_POINTER_DOWN,
+            MotionEvent.ACTION_POINTER_UP,
+            -> {
+                penguinTouchX = (event.x / viewWidth).coerceIn(0f, 1f)
+                penguinTouchY = (event.y / viewHeight).coerceIn(0f, 1f)
+                penguinTouchEnergy = (0.45f + event.pressure * 0.55f).coerceIn(0.45f, 1f)
+            }
+
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL,
+            -> penguinTouchEnergy = 0f
+        }
+
+        return super.dispatchTouchEvent(event)
+    }
+
     @Composable
     override fun Content() {
         val settingsState = settingsRepo.appSettings.observeAsState()
@@ -61,7 +94,6 @@ class ComposeKeyboardView(
 
         ThumbkeyTheme(settings = settings) {
             val keywiEnabled = KeywiAppearancePreferences.load(ctx)
-            val mainBackdrop = BackdropThemePreferences.load(ctx)
             val toolbarBackdrop = ToolbarThemePreferences.load(ctx)
             val keyboardColorScheme =
                 if (keywiEnabled) {
@@ -143,14 +175,11 @@ class ComposeKeyboardView(
                                         }
                                     },
                         ) {
-                            if (
-                                keywiEnabled &&
-                                keyboardHeightPx > 0 &&
-                                mainBackdrop.mode != BackdropMode.COLORFUL &&
-                                mainBackdrop.mode != BackdropMode.NONE
-                            ) {
-                                BackdropVisualLayer(
-                                    state = mainBackdrop,
+                            if (keywiEnabled && keyboardHeightPx > 0) {
+                                PenguinFluidBackdrop(
+                                    touchX = penguinTouchX,
+                                    touchY = penguinTouchY,
+                                    touchEnergy = penguinTouchEnergy,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
@@ -158,11 +187,11 @@ class ComposeKeyboardView(
                                 )
                             }
 
+                            // Penguin owns the backdrop in this branch. Keywi's internal colorful
+                            // backdrop is disabled so the fluid surface is not painted over.
                             val keyboardSettings =
                                 if (!keywiEnabled) {
                                     settings
-                                } else if (mainBackdrop.mode == BackdropMode.COLORFUL) {
-                                    settings?.copy(backdropEnabled = 1)
                                 } else {
                                     settings?.copy(backdropEnabled = 0)
                                 }
