@@ -7,27 +7,41 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 
+private data class PenguinParcel(
+    var x: Float,
+    var y: Float,
+    var vx: Float,
+    var vy: Float,
+    var life: Float,
+    val hueIndex: Int,
+)
+
 /**
- * Phase-one Penguin backdrop.
- *
- * This is deliberately NOT a Navier-Stokes solver yet. It is a cheap, continuously animated,
- * touch-reactive field used to prove that keyboard input and a reactive visual surface can coexist
- * without either system owning the other's gestures.
- *
- * The real fluid solver can replace this composable once the interaction seam is proven.
+ * Penguin's second-stage prototype: still cheap enough for an IME, but now motion has inertia.
+ * Finger velocity creates advected dye parcels that continue travelling, curling and fading after
+ * touch release. This is the bridge between the original reactive plasma proof and a real GPU
+ * velocity / pressure / dye solver.
  */
 @Composable
 fun PenguinFluidBackdrop(
     touchX: Float,
     touchY: Float,
     touchEnergy: Float,
+    velocityX: Float,
+    velocityY: Float,
     modifier: Modifier = Modifier,
 ) {
     val transition = rememberInfiniteTransition(label = "penguin-fluid")
@@ -39,74 +53,109 @@ fun PenguinFluidBackdrop(
             label = "penguin-fluid-phase",
         ).value
 
+    val parcels = remember { mutableStateListOf<PenguinParcel>() }
+    var spawnClock by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(16L)
+            spawnClock++
+
+            val iterator = parcels.listIterator()
+            while (iterator.hasNext()) {
+                val p = iterator.next()
+
+                // Soft rotational flow field: enough curl to look like a substance instead of
+                // ballistic confetti, without pretending this is incompressible fluid yet.
+                val swirlX = sin((p.y + phase * 0.08f) * 10f) * 0.0008f
+                val swirlY = cos((p.x - phase * 0.06f) * 9f) * 0.0008f
+                p.vx = (p.vx + swirlX) * 0.985f
+                p.vy = (p.vy + swirlY) * 0.985f
+                p.x += p.vx
+                p.y += p.vy
+                p.life -= 0.0125f
+
+                if (p.life <= 0f || p.x < -0.25f || p.x > 1.25f || p.y < -0.25f || p.y > 1.25f) {
+                    iterator.remove()
+                }
+            }
+
+            if (touchEnergy > 0.01f && parcels.size < 180 && spawnClock % 1 == 0) {
+                repeat(3) { i ->
+                    val spread = (i - 1) * 0.004f
+                    parcels.add(
+                        PenguinParcel(
+                            x = touchX + spread,
+                            y = touchY - spread,
+                            vx = velocityX * 0.0045f + spread * 0.4f,
+                            vy = velocityY * 0.0045f - spread * 0.4f,
+                            life = 1f,
+                            hueIndex = (spawnClock + i) % 3,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+
     Canvas(modifier = modifier) {
         val w = size.width.coerceAtLeast(1f)
         val h = size.height.coerceAtLeast(1f)
         val minSide = minOf(w, h)
 
-        // Deep-water base. The moving radial fields below intentionally overlap and interfere.
         drawRect(
             brush =
                 Brush.linearGradient(
                     colors =
                         listOf(
-                            Color(0xFF071B34),
-                            Color(0xFF17315F),
-                            Color(0xFF24124F),
+                            Color(0xFF06182F),
+                            Color(0xFF102B55),
+                            Color(0xFF251343),
                         ),
                     start = Offset.Zero,
                     end = Offset(w, h),
                 ),
         )
 
-        val orbitA =
-            Offset(
-                x = w * (0.50f + 0.31f * cos(phase * 0.73f)),
-                y = h * (0.48f + 0.35f * sin(phase * 0.91f)),
-            )
-        val orbitB =
-            Offset(
-                x = w * (0.52f + 0.39f * cos(phase * 0.47f + 2.1f)),
-                y = h * (0.50f + 0.30f * sin(phase * 0.63f + 1.4f)),
-            )
-        val orbitC =
-            Offset(
-                x = w * (0.50f + 0.27f * cos(phase * 0.39f + 4.0f)),
-                y = h * (0.52f + 0.42f * sin(phase * 0.52f + 3.2f)),
-            )
+        // Slow ambient currents remain underneath the dye so the surface never feels dead.
+        val orbitA = Offset(w * (0.5f + 0.28f * cos(phase * 0.63f)), h * (0.5f + 0.34f * sin(phase * 0.82f)))
+        val orbitB = Offset(w * (0.5f + 0.36f * cos(phase * 0.42f + 2.2f)), h * (0.5f + 0.28f * sin(phase * 0.59f + 1.3f)))
 
         fun glow(center: Offset, radius: Float, inner: Color) {
             drawCircle(
-                brush =
-                    Brush.radialGradient(
-                        colors = listOf(inner, inner.copy(alpha = 0f)),
-                        center = center,
-                        radius = radius,
-                    ),
+                brush = Brush.radialGradient(listOf(inner, inner.copy(alpha = 0f)), center, radius),
                 radius = radius,
                 center = center,
             )
         }
 
-        glow(orbitA, minSide * 0.82f, Color(0x9959F3FF))
-        glow(orbitB, minSide * 0.94f, Color(0x887C4DFF))
-        glow(orbitC, minSide * 0.72f, Color(0x88FF3BC8))
+        glow(orbitA, minSide * 0.95f, Color(0x6659E8FF))
+        glow(orbitB, minSide * 0.88f, Color(0x557D50FF))
 
-        // Finger disturbance. Coordinates arrive normalized from the root IME view, so this layer
-        // never participates in hit-testing and therefore cannot eat keyboard gestures.
-        val finger = Offset(touchX.coerceIn(0f, 1f) * w, touchY.coerceIn(0f, 1f) * h)
-        val energy = touchEnergy.coerceIn(0f, 1f)
-        if (energy > 0.01f) {
-            val pulse = 0.86f + 0.14f * sin(phase * 4f)
+        parcels.forEach { p ->
+            val center = Offset(p.x * w, p.y * h)
+            val life = p.life.coerceIn(0f, 1f)
+            val color =
+                when (p.hueIndex) {
+                    0 -> Color(0xFF64F4FF)
+                    1 -> Color(0xFFFF4FD2)
+                    else -> Color(0xFF9A72FF)
+                }
+            val radius = minSide * (0.06f + 0.16f * life)
+            glow(center, radius, color.copy(alpha = 0.12f + 0.42f * life))
+
+            // A dimmer, stretched-looking wake behind each parcel sells directional advection.
+            val wake = Offset(center.x - p.vx * w * 10f, center.y - p.vy * h * 10f)
+            glow(wake, radius * 0.72f, color.copy(alpha = 0.08f + 0.24f * life))
+        }
+
+        if (touchEnergy > 0.01f) {
+            val finger = Offset(touchX.coerceIn(0f, 1f) * w, touchY.coerceIn(0f, 1f) * h)
+            val speed = (kotlin.math.abs(velocityX) + kotlin.math.abs(velocityY)).coerceIn(0f, 4f)
             glow(
                 finger,
-                minSide * (0.30f + energy * 0.55f) * pulse,
-                Color(0xCCB8FFFF).copy(alpha = 0.35f + energy * 0.45f),
-            )
-            glow(
-                finger + Offset(minSide * 0.08f * cos(phase * 3f), minSide * 0.08f * sin(phase * 3f)),
-                minSide * (0.18f + energy * 0.28f),
-                Color(0xAAFF4FD8).copy(alpha = 0.25f + energy * 0.35f),
+                minSide * (0.20f + touchEnergy * 0.18f + speed * 0.025f),
+                Color(0xFFCBFFFF).copy(alpha = 0.30f + touchEnergy * 0.35f),
             )
         }
     }
