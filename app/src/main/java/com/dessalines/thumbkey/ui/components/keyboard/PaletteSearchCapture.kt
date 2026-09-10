@@ -40,15 +40,15 @@ object PaletteSearchCapture {
     }
 
     fun consumeKeyEvent(event: KeyEvent): Boolean {
-        if (!shouldCapture() || event.action != KeyEvent.ACTION_DOWN) return false
+        if (!shouldCapture()) return false
         return when (event.keyCode) {
             KeyEvent.KEYCODE_DEL -> {
-                query = query.dropLastCodePoint()
+                if (event.action == KeyEvent.ACTION_DOWN) query = query.dropLastCodePoint()
                 true
             }
 
             KeyEvent.KEYCODE_ENTER -> {
-                release()
+                if (event.action == KeyEvent.ACTION_DOWN) release()
                 true
             }
 
