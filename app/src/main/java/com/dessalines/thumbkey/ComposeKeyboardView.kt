@@ -58,24 +58,51 @@ class ComposeKeyboardView(
     private var penguinTouchX by mutableFloatStateOf(0.5f)
     private var penguinTouchY by mutableFloatStateOf(0.5f)
     private var penguinTouchEnergy by mutableFloatStateOf(0f)
+    private var penguinVelocityX by mutableFloatStateOf(0f)
+    private var penguinVelocityY by mutableFloatStateOf(0f)
+    private var penguinLastX = 0.5f
+    private var penguinLastY = 0.5f
+    private var penguinLastEventTime = 0L
 
     /**
      * Observe the same MotionEvents the keyboard already receives, but never consume them here.
-     * Penguin gets coordinates; Keywi keeps complete ownership of gesture interpretation.
+     * Penguin gets coordinates and velocity; Keywi keeps complete ownership of gesture interpretation.
      */
     override fun dispatchTouchEvent(event: MotionEvent): Boolean {
         val viewWidth = width.toFloat().coerceAtLeast(1f)
         val viewHeight = height.toFloat().coerceAtLeast(1f)
+        val x = (event.x / viewWidth).coerceIn(0f, 1f)
+        val y = (event.y / viewHeight).coerceIn(0f, 1f)
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN,
-            MotionEvent.ACTION_MOVE,
             MotionEvent.ACTION_POINTER_DOWN,
+            -> {
+                penguinTouchX = x
+                penguinTouchY = y
+                penguinTouchEnergy = (0.45f + event.pressure * 0.55f).coerceIn(0.45f, 1f)
+                penguinVelocityX = 0f
+                penguinVelocityY = 0f
+                penguinLastX = x
+                penguinLastY = y
+                penguinLastEventTime = event.eventTime
+            }
+
+            MotionEvent.ACTION_MOVE,
             MotionEvent.ACTION_POINTER_UP,
             -> {
-                penguinTouchX = (event.x / viewWidth).coerceIn(0f, 1f)
-                penguinTouchY = (event.y / viewHeight).coerceIn(0f, 1f)
+                val dtSeconds = ((event.eventTime - penguinLastEventTime).coerceAtLeast(1L) / 1000f)
+                val instantaneousX = ((x - penguinLastX) / dtSeconds).coerceIn(-4f, 4f)
+                val instantaneousY = ((y - penguinLastY) / dtSeconds).coerceIn(-4f, 4f)
+
+                penguinTouchX = x
+                penguinTouchY = y
                 penguinTouchEnergy = (0.45f + event.pressure * 0.55f).coerceIn(0.45f, 1f)
+                penguinVelocityX = penguinVelocityX * 0.35f + instantaneousX * 0.65f
+                penguinVelocityY = penguinVelocityY * 0.35f + instantaneousY * 0.65f
+                penguinLastX = x
+                penguinLastY = y
+                penguinLastEventTime = event.eventTime
             }
 
             MotionEvent.ACTION_UP,
@@ -130,28 +157,14 @@ class ComposeKeyboardView(
                                         val stroke = toolbarBorderWidth.coerceAtLeast(1f)
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry
-                                                    .Offset(0f, stroke / 2f),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    0f,
-                                                    size.height - stroke / 2f,
-                                                ),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    size.height - stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, size.height - stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, size.height - stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                     }
@@ -180,6 +193,8 @@ class ComposeKeyboardView(
                                     touchX = penguinTouchX,
                                     touchY = penguinTouchY,
                                     touchEnergy = penguinTouchEnergy,
+                                    velocityX = penguinVelocityX,
+                                    velocityY = penguinVelocityY,
                                     modifier =
                                         Modifier
                                             .fillMaxWidth()
@@ -187,8 +202,6 @@ class ComposeKeyboardView(
                                 )
                             }
 
-                            // Penguin owns the backdrop in this branch. Keywi's internal colorful
-                            // backdrop is disabled so the fluid surface is not painted over.
                             val keyboardSettings =
                                 if (!keywiEnabled) {
                                     settings
@@ -223,9 +236,7 @@ class ComposeKeyboardView(
                                                     ?.updateCursorPosition(ctx)
 
                                                 if (s.showToastOnLayoutSwitch.toBool()) {
-                                                    Toast
-                                                        .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
-                                                        .show()
+                                                    Toast.makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT).show()
                                                 }
                                             }
                                         }
