@@ -64,7 +64,7 @@ object PaletteSearchCapture {
         return true
     }
 
-    inline fun <T> bypass(block: () -> T): T {
+    fun <T> bypass(block: () -> T): T {
         bypassDepth += 1
         return try {
             block()
