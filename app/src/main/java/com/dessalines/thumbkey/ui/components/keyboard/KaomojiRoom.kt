@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,7 +45,8 @@ fun KaomojiRoom(
 ) {
     val context = LocalContext.current
     var selectedCategoryId by remember { mutableStateOf(KaomojiLibrary.categories.first().id) }
-    var searchQuery by remember { mutableStateOf("") }
+    val searchQuery = PaletteSearchCapture.query
+    val searchActive = PaletteSearchCapture.active
     var favorites by remember { mutableStateOf(KaomojiPreferences.loadFavorites(context)) }
     var recents by remember { mutableStateOf(KaomojiPreferences.loadRecents(context)) }
     val lozengeTheme = SuggestionLozengeThemePreferences.load(context)
@@ -71,6 +71,11 @@ fun KaomojiRoom(
         onCommit(text)
     }
 
+    fun chooseCategory(id: String) {
+        PaletteSearchCapture.release(clear = true)
+        selectedCategoryId = id
+    }
+
     Column(
         modifier = modifier.padding(horizontal = 8.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -86,13 +91,36 @@ fun KaomojiRoom(
                 fontWeight = FontWeight.Bold,
             )
 
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+            Surface(
+                onClick = { PaletteSearchCapture.activate() },
                 modifier = Modifier.weight(1f),
-                placeholder = { Text("Search…") },
-                singleLine = true,
-            )
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = if (searchActive) 0.88f else 0.68f),
+                border =
+                    BorderStroke(
+                        if (searchActive) 2.dp else 1.dp,
+                        if (searchActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                    ),
+            ) {
+                Text(
+                    text =
+                        when {
+                            searchQuery.isNotEmpty() && searchActive -> "$searchQuery ▏"
+                            searchQuery.isNotEmpty() -> searchQuery
+                            searchActive -> "Type to search… ▏"
+                            else -> "Search…"
+                        },
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    color =
+                        if (searchQuery.isEmpty() && !searchActive) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
 
             onGoToEmoji?.let { goToEmoji ->
                 PaletteLozengeButton(
@@ -103,7 +131,10 @@ fun KaomojiRoom(
             }
             PaletteLozengeButton(
                 text = "✕",
-                onClick = onBackToLetters,
+                onClick = {
+                    PaletteSearchCapture.release(clear = true)
+                    onBackToLetters()
+                },
                 theme = lozengeTheme,
             )
         }
@@ -113,25 +144,16 @@ fun KaomojiRoom(
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             AssistChip(
-                onClick = {
-                    searchQuery = ""
-                    selectedCategoryId = FAVORITES_CATEGORY
-                },
+                onClick = { chooseCategory(FAVORITES_CATEGORY) },
                 label = { Text("★ Favorites") },
             )
             AssistChip(
-                onClick = {
-                    searchQuery = ""
-                    selectedCategoryId = RECENTS_CATEGORY
-                },
+                onClick = { chooseCategory(RECENTS_CATEGORY) },
                 label = { Text("↻ Recent") },
             )
             KaomojiLibrary.categories.forEach { entry ->
                 AssistChip(
-                    onClick = {
-                        searchQuery = ""
-                        selectedCategoryId = entry.id
-                    },
+                    onClick = { chooseCategory(entry.id) },
                     label = {
                         Text(
                             text = "${entry.glyph} ${entry.title}",
