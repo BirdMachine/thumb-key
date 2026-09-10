@@ -46,6 +46,7 @@ import com.dessalines.thumbkey.ui.components.keyboard.ExpandedInputPaletteHost
 import com.dessalines.thumbkey.ui.components.keyboard.InputPalette
 import com.dessalines.thumbkey.ui.components.keyboard.KeyboardScreen
 import com.dessalines.thumbkey.ui.components.keyboard.KeywiAppearancePreferences
+import com.dessalines.thumbkey.ui.components.keyboard.PaletteSearchCapture
 import com.dessalines.thumbkey.ui.components.keyboard.SuggestionBarV2
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarBorderPreferences
 import com.dessalines.thumbkey.ui.components.keyboard.ToolbarLayoutPreferences
@@ -104,12 +105,12 @@ class ComposeKeyboardView(
                                 SuggestionBarV2(ctx)
                                 Surface(
                                     onClick = {
-                                        activePalette =
-                                            if (activePalette == InputPalette.KAOMOJI) {
-                                                null
-                                            } else {
-                                                InputPalette.KAOMOJI
-                                            }
+                                        if (activePalette == InputPalette.KAOMOJI) {
+                                            PaletteSearchCapture.release(clear = true)
+                                            activePalette = null
+                                        } else {
+                                            activePalette = InputPalette.KAOMOJI
+                                        }
                                     },
                                     shape = RoundedCornerShape(18.dp),
                                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
@@ -133,28 +134,14 @@ class ComposeKeyboardView(
                                         val stroke = toolbarBorderWidth.coerceAtLeast(1f)
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry
-                                                    .Offset(0f, stroke / 2f),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                         drawLine(
                                             toolbarBorderColor,
-                                            start =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    0f,
-                                                    size.height - stroke / 2f,
-                                                ),
-                                            end =
-                                                androidx.compose.ui.geometry.Offset(
-                                                    size.width,
-                                                    size.height - stroke / 2f,
-                                                ),
+                                            start = androidx.compose.ui.geometry.Offset(0f, size.height - stroke / 2f),
+                                            end = androidx.compose.ui.geometry.Offset(size.width, size.height - stroke / 2f),
                                             strokeWidth = stroke,
                                         )
                                     }
@@ -171,12 +158,7 @@ class ComposeKeyboardView(
                                 Modifier
                                     .fillMaxWidth()
                                     .clipToBounds()
-                                    .zIndex(0f)
-                                    .onSizeChanged { size ->
-                                        if (size.height != keyboardHeightPx) {
-                                            keyboardHeightPx = size.height
-                                        }
-                                    },
+                                    .zIndex(0f),
                         ) {
                             if (
                                 keywiEnabled &&
@@ -188,6 +170,7 @@ class ComposeKeyboardView(
                                     state = mainBackdrop,
                                     modifier =
                                         Modifier
+                                            .align(Alignment.BottomCenter)
                                             .fillMaxWidth()
                                             .height(with(density) { keyboardHeightPx.toDp() }),
                                 )
@@ -202,66 +185,75 @@ class ComposeKeyboardView(
                                     settings?.copy(backdropEnabled = 0)
                                 }
 
-                            KeyboardScreen(
-                                settings = keyboardSettings,
-                                clipboardRepository = clipboardRepo,
-                                onSwitchLanguage = {
-                                    ctx.lifecycleScope.launch {
-                                        val state = settingsState.value
-                                        state?.let { s ->
-                                            val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
-                                            val currentLayout = s.keyboardLayout
-                                            val index = layouts.map { it.ordinal }.indexOf(currentLayout)
-                                            val nextIndex = (index + 1).mod(layouts.size)
-                                            val nextLayout = layouts.getOrNull(nextIndex)
-                                            nextLayout?.let { layout ->
-                                                val s2 = s.copy(keyboardLayout = layout.ordinal)
-                                                settingsRepo.update(s2)
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .onSizeChanged { size ->
+                                            if (size.height != keyboardHeightPx) keyboardHeightPx = size.height
+                                        },
+                            ) {
+                                KeyboardScreen(
+                                    settings = keyboardSettings,
+                                    clipboardRepository = clipboardRepo,
+                                    onSwitchLanguage = {
+                                        ctx.lifecycleScope.launch {
+                                            val state = settingsState.value
+                                            state?.let { s ->
+                                                val layouts = keyboardLayoutsSetFromDbIndexString(s.keyboardLayouts).toList()
+                                                val currentLayout = s.keyboardLayout
+                                                val index = layouts.map { it.ordinal }.indexOf(currentLayout)
+                                                val nextIndex = (index + 1).mod(layouts.size)
+                                                val nextLayout = layouts.getOrNull(nextIndex)
+                                                nextLayout?.let { layout ->
+                                                    val s2 = s.copy(keyboardLayout = layout.ordinal)
+                                                    settingsRepo.update(s2)
 
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.handleFinishInput(ctx)
-                                                ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
-                                                ctx.currentKeyboardDefinition
-                                                    ?.settings
-                                                    ?.textProcessor
-                                                    ?.updateCursorPosition(ctx)
+                                                    ctx.currentKeyboardDefinition
+                                                        ?.settings
+                                                        ?.textProcessor
+                                                        ?.handleFinishInput(ctx)
+                                                    ctx.currentKeyboardDefinition = layouts[nextIndex].keyboardDefinition
+                                                    ctx.currentKeyboardDefinition
+                                                        ?.settings
+                                                        ?.textProcessor
+                                                        ?.updateCursorPosition(ctx)
 
-                                                if (s.showToastOnLayoutSwitch.toBool()) {
-                                                    Toast
-                                                        .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
-                                                        .show()
+                                                    if (s.showToastOnLayoutSwitch.toBool()) {
+                                                        Toast
+                                                            .makeText(context, layout.keyboardDefinition.title, Toast.LENGTH_SHORT)
+                                                            .show()
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
-                                },
-                                onChangePosition = { f ->
-                                    ctx.lifecycleScope.launch {
-                                        settingsState.value?.let { state ->
-                                            val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
-                                            settingsRepo.update(state.copy(position = nextPosition))
+                                    },
+                                    onChangePosition = { f ->
+                                        ctx.lifecycleScope.launch {
+                                            settingsState.value?.let { state ->
+                                                val nextPosition = f(KeyboardPosition.entries[state.position]).ordinal
+                                                settingsRepo.update(state.copy(position = nextPosition))
+                                            }
                                         }
-                                    }
-                                },
-                                onToggleHideLetters = {
-                                    ctx.lifecycleScope.launch {
-                                        settingsState.value?.let { state ->
-                                            val hidden = (!state.hideLetters.toBool()).toInt()
-                                            settingsRepo.update(state.copy(hideLetters = hidden))
+                                    },
+                                    onToggleHideLetters = {
+                                        ctx.lifecycleScope.launch {
+                                            settingsState.value?.let { state ->
+                                                val hidden = (!state.hideLetters.toBool()).toInt()
+                                                settingsRepo.update(state.copy(hideLetters = hidden))
+                                            }
                                         }
-                                    }
-                                },
-                                onGoToClipboardSettings = {
-                                    val intent =
-                                        Intent(context, MainActivity::class.java).apply {
-                                            putExtra("startRoute", "clipboardSettings")
-                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                                        }
-                                    context.startActivity(intent)
-                                },
-                            )
+                                    },
+                                    onGoToClipboardSettings = {
+                                        val intent =
+                                            Intent(context, MainActivity::class.java).apply {
+                                                putExtra("startRoute", "clipboardSettings")
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                                            }
+                                        context.startActivity(intent)
+                                    },
+                                )
+                            }
 
                             activePalette?.let { palette ->
                                 ExpandedInputPaletteHost(
@@ -269,7 +261,11 @@ class ComposeKeyboardView(
                                     ime = ctx,
                                     vibrateOnTap = (settings?.vibrateOnTap ?: DEFAULT_VIBRATE_ON_TAP).toBool(),
                                     soundOnTap = (settings?.soundOnTap ?: DEFAULT_SOUND_ON_TAP).toBool(),
-                                    onDismiss = { activePalette = null },
+                                    keyboardHeight = with(density) { keyboardHeightPx.toDp() },
+                                    onDismiss = {
+                                        PaletteSearchCapture.release(clear = true)
+                                        activePalette = null
+                                    },
                                     modifier =
                                         Modifier
                                             .align(Alignment.BottomCenter)
