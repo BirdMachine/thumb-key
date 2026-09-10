@@ -3,14 +3,15 @@ package com.dessalines.thumbkey.ui.components.keyboard
 import android.content.Context
 import android.media.AudioManager
 import android.view.HapticFeedbackConstants
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
@@ -46,15 +47,33 @@ fun ExpandedInputPaletteHost(
         (configuration.screenHeightDp * 0.62f)
             .coerceIn(380f, 680f)
             .dp
+    val paletteBackdrop = BackdropThemePreferences.load(ime)
 
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(paletteHeight)
-                .background(MaterialTheme.colorScheme.surface),
+                .height(paletteHeight),
         contentAlignment = Alignment.BottomCenter,
     ) {
+        if (paletteBackdrop.mode != BackdropMode.NONE) {
+            BackdropVisualLayer(
+                state = paletteBackdrop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            androidx.compose.foundation.layout.Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(
+                            Modifier.keyboardSolidBackground(
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                            ),
+                        ),
+            )
+        }
+
         when (palette) {
             InputPalette.KAOMOJI -> {
                 KaomojiRoom(
