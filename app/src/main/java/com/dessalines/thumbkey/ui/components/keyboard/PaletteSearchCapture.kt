@@ -4,13 +4,12 @@ import android.view.KeyEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.dessalines.thumbkey.utils.KeyAction
 
 /**
- * Routes Keywi key presses into an Input Palette's search query instead of the host editor.
+ * Routes Keywi text into an Input Palette search query instead of the host editor.
  *
- * InputMethodService cannot summon a second IME for a text field inside its own window, so
- * searchable palettes deliberately reuse Keywi itself as their input surface.
+ * An IME cannot summon a second IME for a text field inside its own window. Capturing at the
+ * InputConnection boundary lets every Keywi layout keep working as the palette's search keyboard.
  */
 object PaletteSearchCapture {
     var active by mutableStateOf(false)
@@ -18,6 +17,8 @@ object PaletteSearchCapture {
 
     var query by mutableStateOf("")
         private set
+
+    private var bypassDepth = 0
 
     fun activate() {
         active = true
@@ -32,44 +33,47 @@ object PaletteSearchCapture {
         query = ""
     }
 
-    fun consume(action: KeyAction): Boolean {
-        if (!active) return false
+    fun consumeCommitText(text: CharSequence?): Boolean {
+        if (!shouldCapture()) return false
+        query += text?.toString().orEmpty()
+        return true
+    }
 
-        return when (action) {
-            is KeyAction.CommitText -> {
-                query += action.text
-                true
-            }
-
-            is KeyAction.DeleteKeyAction -> {
+    fun consumeKeyEvent(event: KeyEvent): Boolean {
+        if (!shouldCapture() || event.action != KeyEvent.ACTION_DOWN) return false
+        return when (event.keyCode) {
+            KeyEvent.KEYCODE_DEL -> {
                 query = query.dropLastCodePoint()
                 true
             }
 
-            is KeyAction.IMECompleteAction -> {
+            KeyEvent.KEYCODE_ENTER -> {
                 release()
                 true
-            }
-
-            is KeyAction.SendEvent -> {
-                when (action.event.keyCode) {
-                    KeyEvent.KEYCODE_DEL -> {
-                        query = query.dropLastCodePoint()
-                        true
-                    }
-
-                    KeyEvent.KEYCODE_ENTER -> {
-                        release()
-                        true
-                    }
-
-                    else -> false
-                }
             }
 
             else -> false
         }
     }
+
+    fun consumeDeleteBeforeCursor(beforeLength: Int): Boolean {
+        if (!shouldCapture() || beforeLength <= 0) return false
+        repeat(beforeLength) {
+            query = query.dropLastCodePoint()
+        }
+        return true
+    }
+
+    inline fun <T> bypass(block: () -> T): T {
+        bypassDepth += 1
+        return try {
+            block()
+        } finally {
+            bypassDepth -= 1
+        }
+    }
+
+    fun shouldCapture(): Boolean = active && bypassDepth == 0
 }
 
 private fun String.dropLastCodePoint(): String {
