@@ -8,6 +8,20 @@ The idea: instead of a static image, GIF, or gradient behind the keyboard, rende
 
 ---
 
+## 🧪 Current lab status
+
+**Phase-one plumbing is now alive in the branch.**
+
+- `PenguinFluidBackdrop` exists as an intentionally fake-fluid proof-of-concept: moving overlapping color fields plus a touch-reactive bloom.
+- `ComposeKeyboardView` observes the IME's existing `MotionEvent` stream and forwards every event to the normal keyboard unchanged.
+- Touch coordinates and pressure feed Penguin without Penguin participating in gesture hit-testing.
+- When Keywi appearance is enabled, Penguin owns the main keyboard backdrop and the old main image/GIF/gradient backdrop path is bypassed.
+- Penguin CI validates this branch independently; GitHub Releases remain reserved for `main`.
+
+This is **not the final fluid solver**. The point of this pass is to prove that rendering and keyboard gestures can coexist cleanly before spending GPU budget on Navier–Stokes.
+
+---
+
 ## Phase 1 — Barebones Penguin
 
 Goal: prove the interaction feels good before building an actual fluid simulator.
